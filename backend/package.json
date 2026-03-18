@@ -1,0 +1,25 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "this is the backend of tech community app ",
+  "keywords": [
+    "tech",
+    "jobs",
+    "IT"
+  ],
+  "homepage": "https://github.com/PrepInstaPrime/communityapp#readme",
+  "bugs": {
+    "url": "https://github.com/PrepInstaPrime/communityapp/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PrepInstaPrime/communityapp.git"
+  },
+  "license": "ISC",
+  "author": "FSD class",
+  "type": "commonjs",
+  "main": "index.mjs",
+  "scripts": {
+    "test": "node index.mjs"
+  }
+}

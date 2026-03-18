@@ -1,0 +1,163 @@
+.signUpPage {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 18px;
+    align-items: center;
+    justify-items: center;
+    padding: 24px 16px;
+    background: linear-gradient(135deg, #0b1220 0%, #111b2e 55%, #13274a 100%);
+}
+
+.leftPanel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 28px 18px;
+    border-radius: 18px;
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
+}
+
+.leftLogo {
+    width: 110px;
+    height: 110px;
+    object-fit: contain;
+    border-radius: 28px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.leftTitle {
+    margin: 16px 0 10px;
+    font-size: 26px;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: -0.03em;
+    color: rgba(255, 255, 255, 0.96);
+}
+
+.leftSubtitle {
+    margin: 0;
+    max-width: 360px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.76);
+    line-height: 1.5;
+    font-size: 14px;
+}
+
+.rightPanel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0;
+    width: 100%;
+}
+.signUpTitle {
+    font-size: 28px;
+    font-weight: 750;
+    letter-spacing: -0.03em;
+    margin: 0 0 18px;
+    color: rgba(255, 255, 255, 0.96);
+    text-align: center;
+}
+.signUpForm {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: min(560px, 100%);
+    gap: 12px;
+    padding: 22px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(10px);
+}
+
+.signUpForm input {
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(10, 16, 30, 0.35);
+    color: rgba(255, 255, 255, 0.92);
+    padding: 12px 14px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.signUpForm input::placeholder {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.signUpForm input:focus {
+    border-color: rgba(99, 102, 241, 0.85);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.22);
+    background: rgba(10, 16, 30, 0.55);
+}
+
+.signUpForm input[type="file"] {
+    padding: 10px 12px;
+    cursor: pointer;
+}
+
+.signUpForm button {
+    width: 100%;
+    margin-top: 4px;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-weight: 650;
+}
+
+.signUpText {
+    margin: 14px 0 0;
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.signUpText a {
+    color: rgba(99, 102, 241, 0.95);
+    text-decoration: none;
+    font-weight: 650;
+}
+
+.signUpText a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .signUpPage {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 16px 12px;
+    }
+
+    .leftPanel {
+        padding: 22px 14px;
+    }
+
+    .leftLogo {
+        width: 92px;
+        height: 92px;
+    }
+
+    .rightPanel {
+        padding: 0;
+    }
+
+    .signUpForm {
+        padding: 18px;
+        border-radius: 16px;
+    }
+
+    .signUpTitle {
+        font-size: 24px;
+    }
+}
