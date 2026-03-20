@@ -2,7 +2,9 @@ import React from 'react'
 import styles from './HeaderNav.module.css'
 import logo from '../../assets/logo.png'
 import CustomButton from '../buttons/CustomButton'
+import { useNavigate } from 'react-router-dom'
 export default function HeaderNav() {
+    const navigate = useNavigate()
     let menuItems = [
         'Posts',
         'Reels',
@@ -23,7 +25,7 @@ export default function HeaderNav() {
                 ))}
             </ul>
             <div className={styles.userActions}>
-                <CustomButton text="Profile" />
+                <CustomButton text="Profile" handler={() => navigate(`/${localStorage.getItem('userId')}/${localStorage.getItem('username')}/profile`)} />
             </div>
         </div>
     )

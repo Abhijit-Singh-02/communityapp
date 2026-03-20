@@ -1,0 +1,225 @@
+.profilePage {
+  min-height: 100vh;
+  padding: 24px 16px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #0b1220 0%, #111b2e 55%, #13274a 100%);
+}
+
+.profileCard {
+  width: min(820px, 100%);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+  padding: 22px;
+}
+
+.profileTop {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 8px 4px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profileAvatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(16, 185, 129, 0.18) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.profileAvatarImg {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.profileHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profileName {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.profileEmail {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+}
+
+.loading {
+  padding: 14px 6px 0;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.error {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.profileGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding-top: 16px;
+}
+
+.profileItem {
+  border-radius: 14px;
+  padding: 14px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profileLabel {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 6px;
+}
+
+.profileValue {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.93);
+  word-break: break-word;
+}
+
+.profileActions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 0 6px;
+}
+
+.editButton {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(99, 102, 241, 0.25);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+.editButton:hover {
+  transform: translateY(-1px);
+  background: rgba(99, 102, 241, 0.32);
+  border-color: rgba(99, 102, 241, 0.45);
+}
+
+.editForm {
+  margin-top: 8px;
+}
+
+.editGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.fieldInput {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 16, 30, 0.35);
+  color: rgba(255, 255, 255, 0.92);
+  padding: 12px 14px;
+  outline: none;
+}
+
+.fieldInput:focus {
+  border-color: rgba(99, 102, 241, 0.85);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+  background: rgba(10, 16, 30, 0.55);
+}
+
+.submitError {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.editActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.cancelButton {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.cancelButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.saveButton {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(99, 102, 241, 0.25);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+
+.saveButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+@media (max-width: 640px) {
+  .profileGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .profileTop {
+    align-items: flex-start;
+  }
+
+  .editGrid {
+    grid-template-columns: 1fr;
+  }
+}
