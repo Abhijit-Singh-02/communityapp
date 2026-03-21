@@ -3,6 +3,8 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import styles from './Profile.module.css'
 import HeaderNav from '../components/navs/HeaderNav'
+import { serverUrl } from '../../config.mjs'
+import CustomButton from '../components/buttons/CustomButton'
 export default function Profile() {
   const navigate = useNavigate()
   const token = useMemo(() => localStorage.getItem('token'), [])
@@ -39,7 +41,7 @@ export default function Profile() {
       setLoading(true)
       setError('')
       try {
-        const res = await axios.get('http://localhost:8080/profile', {
+        const res = await axios.get(`${serverUrl}/profile`, {
           headers: { Authorization: `Bearer ${token}` }
         })
         setUser(res.data?.user || null)
@@ -88,7 +90,7 @@ export default function Profile() {
     setLoading(true)
     setError('')
     try {
-      const res = await axios.get('http://localhost:8080/profile', {
+      const res = await axios.get(`${serverUrl}/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setUser(res.data?.user || null)
@@ -116,6 +118,46 @@ export default function Profile() {
     if (addressValue.zip) parts.push(addressValue.zip)
     if (addressValue.country) parts.push(addressValue.country)
     return parts.length ? parts.join(', ') : '—'
+  }
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setSubmitLoading(true)
+    setSubmitError('')
+    try {
+      const formData = new FormData()
+      formData.append('username', form.username)
+      formData.append('email', form.email)
+      formData.append('phoneNumber', form.phoneNumber)
+      formData.append('bio', form.bio)
+      formData.append('address', form.address)
+      formData.append('education', form.education)
+      formData.append('dob', form.dob)
+      formData.append('gender', form.gender)
+      formData.append('maritalStatus', form.maritalStatus)
+      formData.append('occupation', form.occupation)
+      if (profilePictureFile) {
+        formData.append('profilePicture', profilePictureFile)
+      }
+
+      await axios.put(`${serverUrl}/profile`, formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      setIsEditing(false)
+      setProfilePictureFile(null)
+      await refreshProfile()
+    } catch (err) {
+      setSubmitError(err?.response?.data?.message || 'Profile update failed.')
+      if (err?.response?.status === 401) navigate('/login', { replace: true })
+    } finally {
+      setSubmitLoading(false)
+    }
+  }
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userId')
+    localStorage.removeItem('username')
+    navigate('/login')
   }
 
   return (
@@ -189,40 +231,7 @@ export default function Profile() {
             ) : (
               <form
                 className={styles.editForm}
-                onSubmit={async (e) => {
-                  e.preventDefault()
-                  setSubmitLoading(true)
-                  setSubmitError('')
-                  try {
-                    const formData = new FormData()
-                    formData.append('username', form.username)
-                    formData.append('email', form.email)
-                    formData.append('phoneNumber', form.phoneNumber)
-                    formData.append('bio', form.bio)
-                    formData.append('address', form.address)
-                    formData.append('education', form.education)
-                    formData.append('dob', form.dob)
-                    formData.append('gender', form.gender)
-                    formData.append('maritalStatus', form.maritalStatus)
-                    formData.append('occupation', form.occupation)
-                    if (profilePictureFile) {
-                      formData.append('profilePicture', profilePictureFile)
-                    }
-
-                    await axios.put('http://localhost:8080/profile', formData, {
-                      headers: { Authorization: `Bearer ${token}` },
-                    })
-
-                    setIsEditing(false)
-                    setProfilePictureFile(null)
-                    await refreshProfile()
-                  } catch (err) {
-                    setSubmitError(err?.response?.data?.message || 'Profile update failed.')
-                    if (err?.response?.status === 401) navigate('/login', { replace: true })
-                  } finally {
-                    setSubmitLoading(false)
-                  }
-                }}
+                onSubmit={handleSubmit}
               >
                 <div className={styles.editGrid}>
                   <label className={styles.field}>
@@ -356,6 +365,7 @@ export default function Profile() {
           </>
         )}
       </div>
+      <CustomButton text="Logout" handler={handleLogout} />
     </div>
     </>
   )

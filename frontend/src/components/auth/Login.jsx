@@ -4,6 +4,7 @@ import logoPng from '../../assets/logo.png'
 import CustomButton from '../buttons/CustomButton'
 import { Link,useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import { serverUrl } from '../../../config.mjs'
 export default function Login() {
   const [formData, setFormData] = useState({
     email: '',
@@ -16,7 +17,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      const response = await axios.post('http://localhost:8080/login', formData,{'Content-Type': 'application/json'})
+      const response = await axios.post(`${serverUrl}/login`, formData,{'Content-Type': 'application/json'})
       if(response.status === 200) {
         // Prefer token from JSON body (works with CORS); fallback to header.
         const tokenFromBody = response.data?.token
@@ -30,7 +31,7 @@ export default function Login() {
         let userId=response.data.user.id
         let username=response.data.user.username
         localStorage.setItem('userId', userId)
-        navigate(`/${userId}/${username}`)
+        navigate(`/`)
         localStorage.setItem('username', username)
       }else{
         alert(response.data.message)

@@ -2,7 +2,7 @@ import React from 'react'
 import styles from './HeaderNav.module.css'
 import logo from '../../assets/logo.png'
 import CustomButton from '../buttons/CustomButton'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate,Link } from 'react-router-dom'
 export default function HeaderNav() {
     const navigate = useNavigate()
     let menuItems = [
@@ -13,6 +13,7 @@ export default function HeaderNav() {
         'Notifications',
         'Messages'
     ]
+    const userId = localStorage.getItem('userId')
     return (
         <div className={styles.headerNav}>
             <div className={styles.branding}>
@@ -20,8 +21,9 @@ export default function HeaderNav() {
                 <h1 className={styles.brandingTitle}>Tech Community</h1>
             </div>
             <ul className={styles.menu}>
+            <li className={styles.menuItem}><Link to={`/`}>{'Home'}</Link></li>
                 {menuItems.map((item, index) => (
-                    <li key={index} className={styles.menuItem}>{item}</li>
+                    <li key={index} className={styles.menuItem}><Link to={`/${userId}/${item.toLowerCase()}`}>{item}</Link></li>
                 ))}
             </ul>
             <div className={styles.userActions}>

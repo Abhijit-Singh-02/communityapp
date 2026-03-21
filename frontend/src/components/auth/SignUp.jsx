@@ -4,6 +4,7 @@ import CustomButton from '../buttons/CustomButton'
 import { Link,useNavigate } from 'react-router-dom'
 import logoPng from '../../assets/logo.png'
 import axios from 'axios'
+import { serverUrl } from '../../../config.mjs'
 export default function SignUp() {
   const [formData, setFormData] = useState({
     username: '',
@@ -23,7 +24,7 @@ export default function SignUp() {
       return
     }
     try {
-      const response = await axios.post('http://localhost:8080/signup', formData,{'Content-Type': 'application/json'})
+      const response = await axios.post(`${serverUrl}/signup`, formData,{'Content-Type': 'application/json'})
       if(response.status === 201) {
         alert('User created successfully')
         navigate('/login')

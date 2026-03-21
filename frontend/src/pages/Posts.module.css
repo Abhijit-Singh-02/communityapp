@@ -1,0 +1,260 @@
+.postsPage {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0b1220 0%, #111b2e 55%, #13274a 100%);
+}
+
+.postsContainer {
+  width: min(980px, 96%);
+  margin: 18px auto 28px;
+  display: grid;
+  gap: 16px;
+}
+
+.postComposerCard,
+.postCard,
+.emptyState {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
+}
+
+.postComposerCard {
+  padding: 18px;
+}
+
+.sectionTitle {
+  margin: 0 0 12px;
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.postForm {
+  display: grid;
+  gap: 12px;
+}
+
+.formatBar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.formatBtn {
+  min-width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.formatBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.postInput {
+  min-height: 120px;
+  resize: vertical;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(10, 16, 30, 0.35);
+  color: rgba(255, 255, 255, 0.93);
+  padding: 12px 14px;
+  font-size: 14px;
+  outline: none;
+}
+
+.postInput:focus {
+  border-color: rgba(99, 102, 241, 0.85);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+}
+
+.postOptions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.uploadLabel {
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 13px;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.fileName {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+}
+
+.previewWrapper {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mediaPreview {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  display: block;
+}
+
+.errorMessage {
+  margin: 0;
+  color: #fecaca;
+  font-size: 13px;
+}
+
+.actionRow {
+  display: flex;
+  gap: 10px;
+}
+
+.primaryBtn,
+.secondaryBtn,
+.actionBtn,
+.deleteBtn {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.primaryBtn {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.secondaryBtn {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.feedSection {
+  display: grid;
+  gap: 12px;
+}
+
+.emptyState {
+  padding: 16px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.feedList {
+  display: grid;
+  gap: 12px;
+}
+
+.postCard {
+  padding: 16px;
+}
+
+.postHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.authorName {
+  margin: 0;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.postTime {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.postText {
+  color: rgba(255, 255, 255, 0.88);
+  margin: 8px 0 10px;
+}
+
+.postLine,
+.postListItem {
+  margin: 0 0 6px;
+}
+
+.postHeading {
+  margin: 2px 0 8px;
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.98);
+}
+
+.postQuote {
+  margin: 4px 0 8px;
+  padding-left: 10px;
+  border-left: 3px solid rgba(99, 102, 241, 0.7);
+  color: rgba(229, 231, 255, 0.92);
+}
+
+.inlineCode {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: #c7d2fe;
+}
+
+.postMediaWrap {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.postMedia {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  display: block;
+}
+
+.postActions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.actionBtn {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.liked {
+  background: rgba(79, 70, 229, 0.25);
+  color: #c7d2fe;
+}
+
+.deleteBtn {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fecaca;
+}
+
+@media (max-width: 640px) {
+  .postsContainer {
+    width: 94%;
+  }
+}
