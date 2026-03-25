@@ -3,6 +3,7 @@ import conversationModel from '../models/conversationModel.mjs'
 import messageModel from '../models/messageModel.mjs'
 import userModel from '../models/userModel.mjs'
 import { normalizePagination, validateObjectId } from '../utils/validate.mjs'
+import uploadProfile from '../aws/uploadProfile.mjs'
 
 const sortIds = (a, b) => (String(a) < String(b) ? -1 : String(a) > String(b) ? 1 : 0)
 
@@ -248,6 +249,22 @@ const deleteMessage = async (req, res) => {
     }
 }
 
+/**
+ * POST /messages/upload
+ * Returns mediaUrl
+ */
+const uploadMessageMedia = async (req, res) => {
+    try {
+        const userId = req.user?.id
+        if (!userId) return res.status(401).send({ message: 'Unauthorized' })
+        if (!req.file) return res.status(400).send({ message: 'No file uploaded' })
+        const mediaUrl = await uploadProfile(req.file)
+        return res.status(200).send({ mediaUrl })
+    } catch (error) {
+        return res.status(500).send({ message: 'Internal server error' })
+    }
+}
+
 export {
     listConversations,
     createConversation,
@@ -255,6 +272,7 @@ export {
     markConversationRead,
     editMessage,
     deleteMessage,
+    uploadMessageMedia,
     getOrCreateConversation,
 }
 

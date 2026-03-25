@@ -57,9 +57,15 @@ export default function Notification() {
 
   const formatTime = (iso) => {
     try {
-      return new Date(iso).toLocaleString()
+      return new Date(iso).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })
     } catch {
       return ''
+    }
+  }
+
+  const navigateToProfile = (id, username) => {
+    if (id && username) {
+        navigate(`/${id}/${username}/profile`)
     }
   }
 
@@ -106,24 +112,36 @@ export default function Notification() {
         {loading && <div className={styles.hint}>Loading…</div>}
         {!loading && error && <div className={styles.error}>{error}</div>}
         {!loading && !error && shown.length === 0 && (
-          <div className={styles.hint}>No new notifications from people you follow.</div>
+          <div className={styles.hint}>No new notifications right now.</div>
         )}
 
         <div className={styles.list}>
           {shown.map((n) => {
             const author = n?.userId?.username || 'Member'
+            const authorId = n?.userId?._id ?? n?.userId
             const isJob = n.postType === 'job'
-            const title = isJob ? n?.job?.title || 'New job' : 'New post'
+            const title = isJob ? n?.job?.title || 'New job' : 'New activity on post'
             const snippet = (n?.content || '').slice(0, 160)
             return (
               <article key={n._id} className={styles.item}>
-                <div className={styles.avatar} aria-hidden>
-                  {author.slice(0, 1).toUpperCase()}
+                <div 
+                    className={styles.avatar} 
+                    aria-hidden 
+                    onClick={() => navigateToProfile(authorId, author)}
+                >
+                    {n?.userId?.profilePicture ? (
+                        <img src={n.userId.profilePicture} alt="" className={styles.avatarImg} />
+                    ) : (
+                        author.slice(0, 1).toUpperCase()
+                    )}
                 </div>
                 <div className={styles.body}>
                   <div className={styles.rowTop}>
                     <div className={styles.line}>
-                      <strong>@{author}</strong> · <span className={styles.muted}>{formatTime(n.createdAt)}</span>
+                      <span className={styles.authorLink} onClick={() => navigateToProfile(authorId, author)}>
+                        {author}
+                      </span>
+                      {' '}· <span className={styles.muted}>{formatTime(n.createdAt)}</span>
                     </div>
                     {isJob && <span className={styles.badge}>JOB</span>}
                   </div>

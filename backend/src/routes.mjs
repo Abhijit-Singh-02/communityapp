@@ -32,6 +32,7 @@ import {
     markConversationRead,
     editMessage,
     deleteMessage,
+    uploadMessageMedia,
 } from './controllers/messageController.mjs'
 import multer from 'multer'
 
@@ -42,7 +43,7 @@ router.post('/login', loginUser)
 router.post('/password/forgot', forgotPassword)
 router.post('/password/reset', resetPassword)
 router.get('/profile', authenticate, getProfile)
-router.put('/profile', authenticate, upload.single('profilePicture'), updateProfile)
+router.put('/profile', authenticate, upload.fields([{ name: 'profilePicture', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), updateProfile)
 router.post('/unfollow', authenticate, unfollowUser)
 router.get('/notifications', authenticate, getNotifications)
 router.post('/notifications/seen', authenticate, markNotificationsSeen)
@@ -68,6 +69,7 @@ router.get('/conversations', authenticate, listConversations)
 router.post('/conversations', authenticate, createConversation)
 router.get('/conversations/:conversationId/messages', authenticate, listMessages)
 router.post('/conversations/:conversationId/read', authenticate, markConversationRead)
+router.post('/messages/upload', authenticate, upload.single('mediaFile'), uploadMessageMedia)
 router.patch('/messages/:messageId', authenticate, editMessage)
 router.delete('/messages/:messageId', authenticate, deleteMessage)
 export default router

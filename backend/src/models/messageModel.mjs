@@ -16,10 +16,12 @@ const messageSchema = new mongoose.Schema(
         },
         text: {
             type: String,
-            required: true,
+            default: '',
             trim: true,
             maxlength: 4000,
         },
+        mediaUrl: { type: String, default: null },
+        mediaType: { type: String, default: null },
         isEdited: { type: Boolean, default: false, index: true },
         editedAt: { type: Date, default: null },
         status: {

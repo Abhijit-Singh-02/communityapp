@@ -69,10 +69,10 @@ io.on('connection', (socket) => {
         })
     })
 
-    socket.on('send_message', async ({ conversationId, otherUserId, text }) => {
+    socket.on('send_message', async ({ conversationId, otherUserId, text, mediaUrl, mediaType }) => {
         try {
             const trimmed = typeof text === 'string' ? text.trim() : ''
-            if (!trimmed) return
+            if (!trimmed && !mediaUrl) return
 
             let convId = conversationId
             let conv
@@ -90,9 +90,16 @@ io.on('connection', (socket) => {
                 conversationId: conv._id,
                 senderId: socket.userId,
                 text: trimmed,
+                mediaUrl: mediaUrl || null,
+                mediaType: mediaType || null,
             })
 
-            conv.lastMessageText = trimmed.slice(0, 240)
+            let msgDesc = trimmed.slice(0, 240)
+            if (!msgDesc && mediaUrl) {
+                msgDesc = String(mediaType).includes('video') ? '[Video]' : '[Image]'
+            }
+
+            conv.lastMessageText = msgDesc
             conv.lastMessageAt = msg.createdAt
             conv.lastMessageSenderId = msg.senderId
             await conv.save()
@@ -102,6 +109,8 @@ io.on('connection', (socket) => {
                 conversationId: convId,
                 senderId: String(msg.senderId),
                 text: msg.text,
+                mediaUrl: msg.mediaUrl || null,
+                mediaType: msg.mediaType || null,
                 createdAt: msg.createdAt,
             }
 

@@ -1,132 +1,160 @@
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 2000;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.2s ease-out forwards;
 }
 
-@media (min-width: 520px) {
-  .overlay {
-    align-items: center;
-  }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.backdrop {
-  position: absolute;
-  inset: 0;
-  border: none;
-  padding: 0;
-  margin: 0;
-  background: rgba(0, 0, 0, 0.55);
-  cursor: pointer;
-}
-
-.sheet {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 420px;
-  max-height: min(72vh, 520px);
-  background: #111b2e;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.45);
+.modalCard {
+  width: min(520px, 94vw);
+  max-height: 85vh;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
+  animation: scaleUp 0.2s ease-out forwards;
 }
 
-@media (min-width: 520px) {
-  .sheet {
-    border-radius: 16px;
-  }
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
-.sheetHeader {
+.modalHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.1);
 }
 
-.sheetTitle {
+.modalTitle {
   margin: 0;
-  font-size: 16px;
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.95);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .closeBtn {
   border: none;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.85);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 26px;
+  line-height: 1;
   width: 32px;
   height: 32px;
-  border-radius: 10px;
-  font-size: 22px;
-  line-height: 1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: all var(--transition-speed);
 }
 
 .closeBtn:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
-.sheetBody {
+.modalBody {
   overflow-y: auto;
-  padding: 8px 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.hint,
-.err {
-  margin: 12px 16px;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.55);
+/* Empty Sets & Loading */
+.hintContainer, .emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
 }
 
-.err {
-  color: #fecaca;
+.emptyIcon {
+  font-size: 40px;
+  margin-bottom: 16px;
+  opacity: 0.5;
 }
 
-.list {
+.hintText {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.subHintText {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.errText {
+  font-size: 15px;
+  color: #ff6b6b;
+}
+
+/* User List */
+.userList {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.row {
+.userRowWrapper {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.userRowWrapper:last-child {
+  border-bottom: none;
+}
+
+.userRow {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
+  padding: 16px 24px;
   border: none;
   background: transparent;
   cursor: pointer;
   text-align: left;
-  color: inherit;
+  transition: background var(--transition-speed);
 }
 
-.row:hover {
-  background: rgba(255, 255, 255, 0.06);
+.userRow:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .avatar {
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.35), rgba(16, 185, 129, 0.25));
+  background: var(--gradient-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 16px;
+  font-weight: 700;
+  font-size: 20px;
   color: #fff;
   overflow: hidden;
   flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .avatarImg {
@@ -135,8 +163,39 @@
   object-fit: cover;
 }
 
+.userDetails {
+  flex: 1;
+  min-width: 0;
+  margin-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .name {
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.occupation {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.viewBadge {
+  font-size: 13px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--accent-blue);
+  background: rgba(88, 166, 255, 0.1);
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  transition: background var(--transition-speed);
+}
+
+.userRow:hover .viewBadge {
+  background: rgba(88, 166, 255, 0.2);
 }

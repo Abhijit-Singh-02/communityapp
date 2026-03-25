@@ -147,7 +147,7 @@ const getProfile = async (req, res) => {
         const doc = await userModel
             .findById(userId)
             .select(
-                'username email phoneNumber profilePicture bio address education dob gender maritalStatus occupation isDeleted isActive isVerified isPremium isAdmin isSuperAdmin followers following'
+                'username email phoneNumber profilePicture coverImage bio address education dob gender maritalStatus occupation isDeleted isActive isVerified isPremium isAdmin isSuperAdmin followers following'
             )
             .lean()
         if (!doc) {
@@ -183,10 +183,17 @@ const updateProfile = async (req, res) => {
             occupation,
         } = req.body
 
-        // `profilePicture` is sent as a multipart upload; multer puts it on `req.file`.
+        // Parse `profilePicture` and `coverImage` if sent via multipart/form-data.
         let profilePictureUrl = null
+        let coverImageUrl = null
+        
         if (req.file) {
-            profilePictureUrl = await uploadProfile(req.file)
+            if (req.file.fieldname === 'profilePicture') profilePictureUrl = await uploadProfile(req.file)
+            else if (req.file.fieldname === 'coverImage') coverImageUrl = await uploadProfile(req.file)
+        }
+        if (req.files) {
+            if (req.files.profilePicture?.[0]) profilePictureUrl = await uploadProfile(req.files.profilePicture[0])
+            if (req.files.coverImage?.[0]) coverImageUrl = await uploadProfile(req.files.coverImage[0])
         }
 
         // Normalize types so updates don't break the Mongoose schema types.
@@ -238,8 +245,16 @@ const updateProfile = async (req, res) => {
             occupation,
         }
 
-        if (profilePictureUrl) {
+        if (req.body.deleteProfilePicture === 'true') {
+            updatedData.profilePicture = null
+        } else if (profilePictureUrl) {
             updatedData.profilePicture = profilePictureUrl
+        }
+
+        if (req.body.deleteCoverImage === 'true') {
+            updatedData.coverImage = null
+        } else if (coverImageUrl) {
+            updatedData.coverImage = coverImageUrl
         }
 
         const updatedUser = await userModel
@@ -344,7 +359,7 @@ const getPublicUser = async (req, res) => {
         }
         const target = await userModel
             .findOne({ _id: userId, isDeleted: { $ne: true } })
-            .select('username profilePicture bio occupation followers following')
+            .select('username profilePicture coverImage bio occupation followers following')
             .lean()
         if (!target) {
             return res.status(404).send({ message: 'User not found' })
@@ -362,6 +377,7 @@ const getPublicUser = async (req, res) => {
             _id: target._id,
             username: target.username,
             profilePicture: target.profilePicture,
+            coverImage: target.coverImage,
             bio: target.bio,
             occupation: target.occupation,
             followersCount: followers.length,
@@ -378,7 +394,7 @@ const orderedUsersByIds = async (ids) => {
     if (!ids.length) return []
     const users = await userModel
         .find({ _id: { $in: ids }, isDeleted: { $ne: true } })
-        .select('username profilePicture')
+        .select('username profilePicture occupation bio')
         .lean()
     const map = new Map(users.map((u) => [String(u._id), u]))
     return ids.map((id) => map.get(String(id))).filter(Boolean)

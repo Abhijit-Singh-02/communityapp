@@ -21,10 +21,15 @@ export default function Messages() {
   const [otherTyping, setOtherTyping] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [editingText, setEditingText] = useState('')
+  const [selectedFile, setSelectedFile] = useState(null)
+  const fileInputRef = useRef(null)
+  
   const [newChatOpen, setNewChatOpen] = useState(false)
   const [userQuery, setUserQuery] = useState('')
   const [userResults, setUserResults] = useState([])
   const [userLoading, setUserLoading] = useState(false)
+  
+  const [followingIds, setFollowingIds] = useState(() => new Set())
 
   const authHeaders = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token])
 
@@ -36,6 +41,31 @@ export default function Messages() {
     () => conversations.find((c) => String(c._id) === String(activeConvId)) || null,
     [conversations, activeConvId]
   )
+
+  useEffect(() => {
+    if (!token) return
+    axios.get(`${serverUrl}/profile`, { headers: authHeaders })
+      .then(res => setFollowingIds(new Set((res.data?.user?.followingIds || []).map(String))))
+      .catch(() => {})
+  }, [token, authHeaders])
+
+  const toggleFollow = async (otherUserId) => {
+    if (!otherUserId || !token) return
+    const idStr = String(otherUserId)
+    // Only following allowed in this UI (clean UI)
+    try {
+        await axios.post(`${serverUrl}/follow`, { followingUserId: idStr }, { headers: authHeaders })
+        setFollowingIds(prev => new Set([...prev, idStr]))
+    } catch (err) {
+        setError(err?.response?.data?.message || 'Could not follow user.')
+    }
+  }
+
+  const navigateToProfile = (id, username) => {
+      if (id && username) {
+          navigate(`/${id}/${username}/profile`)
+      }
+  }
 
   const loadInbox = async () => {
     if (!token) return
@@ -180,11 +210,6 @@ export default function Messages() {
       loadInbox()
     })
 
-    socket.on('read', ({ conversationId }) => {
-      if (String(conversationId) !== String(activeConvId)) return
-      // no-op for now (UI can show read receipts later)
-    })
-
     return () => {
       socket.disconnect()
       socketRef.current = null
@@ -206,9 +231,37 @@ export default function Messages() {
 
   const send = async () => {
     const trimmed = text.trim()
-    if (!trimmed || !socketRef.current || !activeConvId) return
+    if ((!trimmed && !selectedFile) || !socketRef.current || !activeConvId) return
+
+    let mediaUrl = null
+    let mediaType = null
+
+    if (selectedFile) {
+      setLoading(true)
+      try {
+        const formData = new FormData()
+        formData.append('mediaFile', selectedFile)
+        const res = await axios.post(`${serverUrl}/messages/upload`, formData, { headers: authHeaders })
+        mediaUrl = res.data.mediaUrl
+        mediaType = selectedFile.type.startsWith('video/') ? 'video' : 'image'
+      } catch (err) {
+        setError('Failed to upload attachment.')
+        setLoading(false)
+        return
+      }
+    }
+
     setText('')
-    socketRef.current.emit('send_message', { conversationId: activeConvId, text: trimmed })
+    setSelectedFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+    setLoading(false)
+
+    socketRef.current.emit('send_message', { 
+        conversationId: activeConvId, 
+        text: trimmed,
+        mediaUrl,
+        mediaType
+    })
   }
 
   const formatTime = (iso) => {
@@ -284,9 +337,17 @@ export default function Messages() {
                   className={`${styles.convRow} ${active ? styles.convRowActive : ''}`}
                   onClick={() => setActiveConvId(c._id)}
                 >
-                  <span className={styles.avatar} aria-hidden>
+                  <span 
+                    className={`${styles.avatar} ${styles.clickableAvatar}`} 
+                    aria-hidden 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigateToProfile(other?._id, other?.username);
+                    }}
+                    title={`View ${other?.username || 'user'}'s profile`}
+                  >
                     {other?.profilePicture ? (
-                      <img src={other.profilePicture} alt="" className={styles.avatarImg} />
+                      <img src={other.profilePicture} alt="" className={styles.avatarImg} draggable="false" />
                     ) : (
                       (other?.username || 'M').slice(0, 1).toUpperCase()
                     )}
@@ -307,8 +368,32 @@ export default function Messages() {
           {activeConversation && (
             <>
               <div className={styles.chatHeader}>
-                <div className={styles.chatTitle}>@{activeConversation?.otherUser?.username || 'Member'}</div>
-                {otherTyping && <div className={styles.typing}>Typing…</div>}
+                <div 
+                    className={styles.chatHeaderInfo}
+                    onClick={() => navigateToProfile(activeConversation.otherUser._id, activeConversation.otherUser.username)}
+                >
+                    <div className={styles.avatar} style={{width: 40, height: 40}}>
+                        {activeConversation.otherUser?.profilePicture ? (
+                            <img src={activeConversation.otherUser.profilePicture} alt="" className={styles.avatarImg} draggable="false" />
+                        ) : (
+                            (activeConversation.otherUser?.username || 'U').slice(0, 1).toUpperCase()
+                        )}
+                    </div>
+                    <div>
+                        <div className={styles.chatTitle}>{activeConversation.otherUser?.username || 'Member'}</div>
+                        {otherTyping && <div className={styles.typing}>Typing…</div>}
+                    </div>
+                </div>
+                
+                {!followingIds.has(String(activeConversation.otherUser._id)) && (
+                    <button 
+                        type="button" 
+                        className={styles.followBtn}
+                        onClick={() => toggleFollow(activeConversation.otherUser._id)}
+                    >
+                        + Follow
+                    </button>
+                )}
               </div>
 
               <div className={styles.msgList}>
@@ -319,10 +404,34 @@ export default function Messages() {
                     const isEditing = String(editingId) === String(m._id)
                     return (
                       <div key={m._id} className={`${styles.msgRow} ${mine ? styles.msgRowMine : ''}`}>
+                        
+                        {!mine && activeConversation.otherUser && (
+                          <div 
+                              className={`${styles.msgAvatar} ${styles.clickableAvatar}`} 
+                              onClick={() => navigateToProfile(activeConversation.otherUser._id, activeConversation.otherUser.username)}
+                              title={`View ${activeConversation.otherUser.username}'s profile`}
+                          >
+                             {activeConversation.otherUser.profilePicture ? (
+                               <img src={activeConversation.otherUser.profilePicture} alt="" className={styles.avatarImg} draggable="false" />
+                             ) : (
+                               (activeConversation.otherUser.username || 'U').slice(0, 1).toUpperCase()
+                             )}
+                          </div>
+                        )}
+
                         <div className={`${styles.bubble} ${mine ? styles.bubbleMine : styles.bubbleOther}`}>
                           {!isEditing ? (
                             <>
-                              <div className={styles.msgText}>{m.text}</div>
+                              {m.mediaUrl && (
+                                <div className={styles.msgMediaWrap}>
+                                  {String(m.mediaType).includes('video') ? (
+                                    <video src={m.mediaUrl} controls className={styles.msgMedia} />
+                                  ) : (
+                                    <img src={m.mediaUrl} alt="Attachment" className={styles.msgMedia} />
+                                  )}
+                                </div>
+                              )}
+                              {m.text && <div className={styles.msgText}>{m.text}</div>}
                               <div className={styles.msgMeta}>
                                 {m.isEdited && m.status !== 'deleted' ? 'edited · ' : ''}
                                 {formatTime(m.createdAt)}
@@ -367,19 +476,44 @@ export default function Messages() {
                 <div ref={bottomRef} />
               </div>
 
-              <div className={styles.composer}>
-                <input
-                  className={styles.input}
-                  value={text}
-                  onChange={(e) => onTyping(e.target.value)}
-                  placeholder="Write a message…"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') send()
-                  }}
-                />
-                <button type="button" className={styles.sendBtn} onClick={send} disabled={!text.trim()}>
-                  Send
-                </button>
+              <div className={styles.composerWrapper}>
+                {selectedFile && (
+                  <div className={styles.composerPreview}>
+                    <span className={styles.previewName}>Attachment: {selectedFile.name}</span>
+                    <button type="button" onClick={() => setSelectedFile(null)} className={styles.removeFileBtn}>×</button>
+                  </div>
+                )}
+                <div className={styles.composer}>
+                  <button 
+                    type="button" 
+                    className={styles.attachBtn} 
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Attach Image or Video"
+                  >
+                    📎
+                  </button>
+                  <input 
+                    type="file" 
+                    accept="image/*,video/*" 
+                    style={{display: 'none'}} 
+                    ref={fileInputRef}
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) setSelectedFile(e.target.files[0])
+                    }}
+                  />
+                  <input
+                    className={styles.input}
+                    value={text}
+                    onChange={(e) => onTyping(e.target.value)}
+                    placeholder="Write a message…"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') send()
+                    }}
+                  />
+                  <button type="button" className={styles.sendBtn} onClick={send} disabled={(!text.trim() && !selectedFile) || loading}>
+                    {loading ? '…' : 'Send'}
+                  </button>
+                </div>
               </div>
             </>
           )}
@@ -439,4 +573,3 @@ export default function Messages() {
     </div>
   )
 }
-
