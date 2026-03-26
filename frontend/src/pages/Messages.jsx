@@ -19,10 +19,14 @@ export default function Messages() {
   const [error, setError] = useState('')
   const [typing, setTyping] = useState(false)
   const [otherTyping, setOtherTyping] = useState(false)
-  const [editingId, setEditingId] = useState(null)
-  const [editingText, setEditingText] = useState('')
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [selectedMessages, setSelectedMessages] = useState(new Set())
+  const [menuOpen, setMenuOpen] = useState(false)
+  
   const [selectedFile, setSelectedFile] = useState(null)
   const fileInputRef = useRef(null)
+  
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false)
   
   const [newChatOpen, setNewChatOpen] = useState(false)
   const [userQuery, setUserQuery] = useState('')
@@ -115,6 +119,7 @@ export default function Messages() {
       if (convId) {
         await loadInbox()
         setActiveConvId(convId)
+        setIsMobileChatOpen(true)
         setNewChatOpen(false)
         setUserQuery('')
         setUserResults([])
@@ -272,31 +277,55 @@ export default function Messages() {
     }
   }
 
-  const startEdit = (m) => {
-    if (String(m.senderId) !== String(currentUserId)) return
-    if (m.status === 'deleted') return
-    setEditingId(m._id)
-    setEditingText(m.text || '')
+  const longPressTimer = useRef(null)
+
+  const handlePointerDown = (m) => {
+    if (isSelectionMode) return
+    longPressTimer.current = setTimeout(() => {
+      setIsSelectionMode(true)
+      setSelectedMessages(new Set([m._id]))
+    }, 500)
   }
 
-  const cancelEdit = () => {
-    setEditingId(null)
-    setEditingText('')
+  const handlePointerUp = () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current)
   }
 
-  const saveEdit = () => {
-    const trimmed = editingText.trim()
-    if (!trimmed || !socketRef.current || !editingId) return
-    socketRef.current.emit('edit_message', { messageId: editingId, text: trimmed })
-    cancelEdit()
+  const toggleSelection = (m) => {
+    if (!isSelectionMode) return
+    setSelectedMessages(prev => {
+      const next = new Set(prev)
+      if (next.has(m._id)) next.delete(m._id)
+      else next.add(m._id)
+      if (next.size === 0) setIsSelectionMode(false)
+      return next
+    })
   }
 
-  const deleteMsg = (m) => {
-    if (String(m.senderId) !== String(currentUserId)) return
-    if (!socketRef.current) return
-    if (!window.confirm('Delete this message?')) return
-    socketRef.current.emit('delete_message', { messageId: m._id })
-    if (String(editingId) === String(m._id)) cancelEdit()
+  const toggleSelectAll = () => {
+    if (selectedMessages.size === messages.length && messages.length > 0) {
+      setSelectedMessages(new Set())
+      setIsSelectionMode(false)
+    } else {
+      setSelectedMessages(new Set(messages.map(m => m._id)))
+      setIsSelectionMode(true)
+    }
+    setMenuOpen(false)
+  }
+
+  const deleteSelected = () => {
+    if (!socketRef.current || selectedMessages.size === 0) return
+    if (!window.confirm(`Delete ${selectedMessages.size} message(s)?`)) return
+    
+    selectedMessages.forEach(msgId => {
+      const msg = messages.find(m => m._id === msgId)
+      if (msg && String(msg.senderId) === String(currentUserId)) {
+         socketRef.current.emit('delete_message', { messageId: msgId })
+      }
+    })
+    setIsSelectionMode(false)
+    setSelectedMessages(new Set())
+    setMenuOpen(false)
   }
 
   const onTyping = (val) => {
@@ -317,7 +346,7 @@ export default function Messages() {
   return (
     <div className={styles.page}>
       <HeaderNav />
-      <div className={styles.wrap}>
+      <div className={`${styles.wrap} ${isMobileChatOpen ? styles.mobileChatOpen : ''}`}>
         <aside className={styles.sidebar}>
           <div className={styles.sidebarHeader}>
             <h1 className={styles.title}>Messaging</h1>
@@ -335,7 +364,10 @@ export default function Messages() {
                   key={c._id}
                   type="button"
                   className={`${styles.convRow} ${active ? styles.convRowActive : ''}`}
-                  onClick={() => setActiveConvId(c._id)}
+                  onClick={() => {
+                    setActiveConvId(c._id)
+                    setIsMobileChatOpen(true)
+                  }}
                 >
                   <span 
                     className={`${styles.avatar} ${styles.clickableAvatar}`} 
@@ -367,32 +399,77 @@ export default function Messages() {
           {!activeConversation && <div className={styles.empty}>Select a conversation.</div>}
           {activeConversation && (
             <>
-              <div className={styles.chatHeader}>
-                <div 
-                    className={styles.chatHeaderInfo}
-                    onClick={() => navigateToProfile(activeConversation.otherUser._id, activeConversation.otherUser.username)}
-                >
-                    <div className={styles.avatar} style={{width: 40, height: 40}}>
-                        {activeConversation.otherUser?.profilePicture ? (
-                            <img src={activeConversation.otherUser.profilePicture} alt="" className={styles.avatarImg} draggable="false" />
-                        ) : (
-                            (activeConversation.otherUser?.username || 'U').slice(0, 1).toUpperCase()
+              <div className={`${styles.chatHeader} ${isSelectionMode ? styles.selectionHeaderActive : ''}`}>
+                {isSelectionMode ? (
+                  <>
+                    <div className={styles.chatHeaderLeft}>
+                      <button className={styles.iconBtn} onClick={() => { setIsSelectionMode(false); setSelectedMessages(new Set()); }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                      </button>
+                      <span className={styles.selectionCount}>{selectedMessages.size} selected</span>
+                    </div>
+                    <div className={styles.selectionActions}>
+                      <button className={styles.iconBtn} onClick={toggleSelectAll} title="Select All">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                      </button>
+                      <button className={styles.iconBtn} onClick={deleteSelected} title="Delete">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className={styles.chatHeaderLeft}>
+                        <button 
+                            className={styles.mobileBackBtn} 
+                            onClick={() => setIsMobileChatOpen(false)}
+                            type="button"
+                            title="Back to inbox"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                        <div 
+                            className={styles.chatHeaderInfo}
+                            onClick={() => navigateToProfile(activeConversation.otherUser._id, activeConversation.otherUser.username)}
+                        >
+                          <div className={styles.avatar} style={{width: 40, height: 40}}>
+                              {activeConversation.otherUser?.profilePicture ? (
+                                  <img src={activeConversation.otherUser.profilePicture} alt="" className={styles.avatarImg} draggable="false" />
+                              ) : (
+                                  (activeConversation.otherUser?.username || 'U').slice(0, 1).toUpperCase()
+                              )}
+                          </div>
+                          <div>
+                              <div className={styles.chatTitle}>{activeConversation.otherUser?.username || 'Member'}</div>
+                              {otherTyping && <div className={styles.typing}>Typing…</div>}
+                          </div>
+                        </div>
+                    </div>
+                    
+                    <div className={styles.chatHeaderRight}>
+                      {!followingIds.has(String(activeConversation.otherUser._id)) && (
+                          <button 
+                              type="button" 
+                              className={styles.followBtn}
+                              onClick={() => toggleFollow(activeConversation.otherUser._id)}
+                          >
+                              + Follow
+                          </button>
+                      )}
+                      <div className={styles.menuContainer}>
+                        <button className={styles.iconBtn} onClick={() => setMenuOpen(!menuOpen)}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                        </button>
+                        {menuOpen && (
+                          <div className={styles.dropdownMenu}>
+                            <button className={styles.dropdownItem} onClick={() => { setIsSelectionMode(true); setMenuOpen(false); }}>Select Messages</button>
+                            <button className={styles.dropdownItem} onClick={toggleSelectAll}>Select All</button>
+                            {selectedMessages.size > 0 && <button className={`${styles.dropdownItem} ${styles.dangerText}`} onClick={deleteSelected}>Delete Selected</button>}
+                          </div>
                         )}
+                      </div>
                     </div>
-                    <div>
-                        <div className={styles.chatTitle}>{activeConversation.otherUser?.username || 'Member'}</div>
-                        {otherTyping && <div className={styles.typing}>Typing…</div>}
-                    </div>
-                </div>
-                
-                {!followingIds.has(String(activeConversation.otherUser._id)) && (
-                    <button 
-                        type="button" 
-                        className={styles.followBtn}
-                        onClick={() => toggleFollow(activeConversation.otherUser._id)}
-                    >
-                        + Follow
-                    </button>
+                  </>
                 )}
               </div>
 
@@ -401,26 +478,46 @@ export default function Messages() {
                 {!loading &&
                   messages.map((m) => {
                     const mine = String(m.senderId) === String(currentUserId)
-                    const isEditing = String(editingId) === String(m._id)
+                    const isSelected = selectedMessages.has(m._id)
                     return (
-                      <div key={m._id} className={`${styles.msgRow} ${mine ? styles.msgRowMine : ''}`}>
-                        
-                        {!mine && activeConversation.otherUser && (
-                          <div 
-                              className={`${styles.msgAvatar} ${styles.clickableAvatar}`} 
-                              onClick={() => navigateToProfile(activeConversation.otherUser._id, activeConversation.otherUser.username)}
-                              title={`View ${activeConversation.otherUser.username}'s profile`}
-                          >
-                             {activeConversation.otherUser.profilePicture ? (
-                               <img src={activeConversation.otherUser.profilePicture} alt="" className={styles.avatarImg} draggable="false" />
-                             ) : (
-                               (activeConversation.otherUser.username || 'U').slice(0, 1).toUpperCase()
-                             )}
+                      <div 
+                        key={m._id} 
+                        className={`${styles.msgRowWrapper} ${isSelected ? styles.msgSelected : ''}`}
+                        onClick={() => toggleSelection(m)}
+                        onPointerDown={() => handlePointerDown(m)}
+                        onPointerUp={handlePointerUp}
+                        onPointerCancel={handlePointerUp}
+                        onContextMenu={(e) => {
+                           if (!isSelectionMode) {
+                              e.preventDefault();
+                              setIsSelectionMode(true);
+                              setSelectedMessages(new Set([m._id]));
+                           }
+                        }}
+                      >
+                        {isSelectionMode && (
+                          <div className={styles.checkboxContainer}>
+                            <div className={`${styles.checkbox} ${isSelected ? styles.checkboxChecked : ''}`}>
+                              {isSelected && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                            </div>
                           </div>
                         )}
+                        <div className={`${styles.msgRow} ${mine ? styles.msgRowMine : ''}`}>
+                          {!mine && activeConversation.otherUser && !isSelectionMode && (
+                            <div 
+                                className={`${styles.msgAvatar} ${styles.clickableAvatar}`} 
+                                onClick={(e) => { e.stopPropagation(); navigateToProfile(activeConversation.otherUser._id, activeConversation.otherUser.username); }}
+                                title={`View ${activeConversation.otherUser.username}'s profile`}
+                            >
+                               {activeConversation.otherUser.profilePicture ? (
+                                 <img src={activeConversation.otherUser.profilePicture} alt="" className={styles.avatarImg} draggable="false" />
+                               ) : (
+                                 (activeConversation.otherUser.username || 'U').slice(0, 1).toUpperCase()
+                               )}
+                            </div>
+                          )}
 
-                        <div className={`${styles.bubble} ${mine ? styles.bubbleMine : styles.bubbleOther}`}>
-                          {!isEditing ? (
+                          <div className={`${styles.bubble} ${mine ? styles.bubbleMine : styles.bubbleOther}`}>
                             <>
                               {m.mediaUrl && (
                                 <div className={styles.msgMediaWrap}>
@@ -437,39 +534,8 @@ export default function Messages() {
                                 {formatTime(m.createdAt)}
                               </div>
                             </>
-                          ) : (
-                            <div className={styles.editBox}>
-                              <input
-                                className={styles.editInput}
-                                value={editingText}
-                                onChange={(e) => setEditingText(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') saveEdit()
-                                  if (e.key === 'Escape') cancelEdit()
-                                }}
-                              />
-                              <div className={styles.editActions}>
-                                <button type="button" className={styles.smallBtn} onClick={cancelEdit}>
-                                  Cancel
-                                </button>
-                                <button type="button" className={styles.smallBtnPrimary} onClick={saveEdit} disabled={!editingText.trim()}>
-                                  Save
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {mine && !isEditing && m.status !== 'deleted' && (
-                          <div className={styles.msgTools}>
-                            <button type="button" className={styles.toolBtn} onClick={() => startEdit(m)}>
-                              Edit
-                            </button>
-                            <button type="button" className={styles.toolBtnDanger} onClick={() => deleteMsg(m)}>
-                              Delete
-                            </button>
                           </div>
-                        )}
+                        </div>
                       </div>
                     )
                   })}

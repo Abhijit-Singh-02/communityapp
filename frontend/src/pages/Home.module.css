@@ -4,7 +4,9 @@
 }
 
 .mainLayout {
-  width: min(1200px, 96%);
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 16px;
   margin: 20px auto;
   display: grid;
   grid-template-columns: 280px 1fr 300px;
@@ -255,6 +257,11 @@
   .rightSidebar { display: none; }
 }
 @media (max-width: 768px) {
-  .mainLayout { grid-template-columns: 1fr; }
+  .mainLayout { 
+    grid-template-columns: 1fr; 
+    gap: 16px;
+    padding: 0 12px;
+    margin-top: 12px;
+  }
   .leftSidebar { display: none; }
 }

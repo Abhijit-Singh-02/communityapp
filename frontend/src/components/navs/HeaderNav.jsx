@@ -39,28 +39,69 @@ export default function HeaderNav() {
         return path.startsWith(to)
     }
 
+    const username = localStorage.getItem('username') || ''
+    const firstLetter = username ? username.charAt(0).toUpperCase() : 'U'
+
     return (
-        <div className={styles.headerNav}>
-            <div className={styles.branding}>
-                <img src={logo} alt="logo" className={styles.logo} />
-                <h1 className={styles.brandingTitle}>Tech Community</h1>
-            </div>
-            <ul className={styles.menu} aria-label="Primary navigation">
-                {navItems.map((item) => {
-                    const active = isActive(item.to)
-                    return (
-                        <li key={item.key} className={styles.menuItem}>
-                            <Link className={`${styles.navLink} ${active ? styles.navLinkActive : ''}`} to={item.to}>
-                                {item.label}
-                            </Link>
-                        </li>
-                    )
-                })}
-            </ul>
-            <div className={styles.userActions}>
-                <CustomButton text="Profile" handler={() => navigate(`/${localStorage.getItem('userId')}/${localStorage.getItem('username')}/profile`)} />
+        <header className={styles.headerContainer}>
+            {/* Desktop Navigation */}
+            <div className={styles.desktopNav}>
+                <div className={styles.branding}>
+                    <img src={logo} alt="logo" className={styles.logo} />
+                    <h1 className={styles.brandingTitle}>Tech Community</h1>
+                </div>
+                <ul className={styles.menu} aria-label="Primary navigation">
+                    {navItems.map((item) => {
+                        const active = isActive(item.to)
+                        return (
+                            <li key={item.key} className={styles.menuItem}>
+                                <Link className={`${styles.navLink} ${active ? styles.navLinkActive : ''}`} to={item.to}>
+                                    {item.label}
+                                </Link>
+                            </li>
+                        )
+                    })}
+                </ul>
+                <div className={styles.userActions}>
+                    <div 
+                        className={styles.profileIcon} 
+                        title="Profile"
+                        onClick={() => navigate(`/${userId}/${username}/profile`)}
+                        role="button"
+                        tabIndex={0}
+                    >
+                        {firstLetter}
+                    </div>
+                </div>
             </div>
 
+            {/* Mobile Top Navigation */}
+            <div className={styles.mobileTopNav}>
+                <div 
+                    className={styles.profileIconSmall} 
+                    onClick={() => navigate(`/${userId}/${username}/profile`)}
+                    role="button"
+                    tabIndex={0}
+                >
+                    {firstLetter}
+                </div>
+                <div className={styles.mobileSearchWrapper}>
+                    <div className={styles.searchIcon}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </div>
+                    <input 
+                        type="text" 
+                        placeholder="Search..." 
+                        className={styles.mobileSearchInput} 
+                        onFocus={() => {
+                            // Simple alert for now as per instructions "I'll just wire it up to an alert or make UI"
+                            // or leave functional placeholder
+                        }}
+                    />
+                </div>
+            </div>
+
+            {/* Bottom Navigation */}
             <nav className={styles.bottomNav} aria-label="Bottom navigation">
                 {navItems
                     .filter((i) => i.key !== 'posts') /* keep bottom nav minimal like Instagram */
@@ -82,6 +123,6 @@ export default function HeaderNav() {
                         )
                     })}
             </nav>
-        </div>
+        </header>
     )
 }

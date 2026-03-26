@@ -4,10 +4,10 @@
 }
 
 .wrap {
+  max-width: 1400px;
   width: 98%;
   margin: 20px auto;
-  display: grid;
-  grid-template-columns: 360px 1fr;
+  display: flex;
   gap: 20px;
   height: calc(100vh - 100px); /* Fill screen minus header */
 }
@@ -23,6 +23,16 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.sidebar {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+.chat {
+  flex: 1;
+  min-width: 0;
 }
 
 .sidebarHeader,
@@ -151,6 +161,30 @@
   cursor: pointer;
 }
 
+.chatHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobileBackBtn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 8px;
+  margin-left: -8px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-speed);
+}
+
+.mobileBackBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .chatHeaderInfo:hover .chatTitle {
   color: var(--accent-blue);
   text-decoration: underline;
@@ -210,6 +244,8 @@
   justify-content: flex-start;
   align-items: flex-end;
   gap: 8px;
+  flex: 1;
+  min-width: 0;
 }
 
 .msgAvatar {
@@ -283,29 +319,113 @@
   opacity: 0.7;
 }
 
-.msgTools {
+/* Selection Mode Elements */
+.selectionHeaderActive {
+  background: rgba(88, 166, 255, 0.2) !important;
+}
+.selectionCount {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.selectionActions {
+  display: flex;
+  gap: 12px;
+}
+.iconBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.iconBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.chatHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 3 dots menu */
+.menuContainer {
+  position: relative;
+}
+.dropdownMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity var(--transition-speed);
+  min-width: 160px;
+  z-index: 100;
+  overflow: hidden;
 }
-
-.msgRowMine:hover .msgTools {
-  opacity: 1;
-}
-
-.toolBtn, .toolBtnDanger {
+.dropdownItem {
+  background: transparent;
   border: none;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 12px 16px;
+  text-align: left;
   color: var(--text-primary);
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 11px;
+  font-size: 14px;
+  cursor: pointer;
 }
-.toolBtn:hover { background: rgba(255, 255, 255, 0.2); }
-.toolBtnDanger { color: #ff6b6b; }
-.toolBtnDanger:hover { background: rgba(255, 107, 107, 0.15); }
+.dropdownItem:hover {
+  background: rgba(255,255,255,0.05);
+}
+.dangerText {
+  color: #ff6b6b;
+}
+
+/* Message Wrapper and Checkbox */
+.msgRowWrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+  user-select: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+.msgRowWrapper:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.msgSelected {
+  background: rgba(88, 166, 255, 0.15) !important;
+}
+.checkboxContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 8px;
+}
+.checkbox {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.checkboxChecked {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
 
 /* Composer */
 .composerWrapper {
@@ -345,6 +465,8 @@
   display: flex;
   gap: 12px;
   align-items: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .attachBtn {
@@ -357,6 +479,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 .attachBtn:hover {
   color: var(--accent-blue);
@@ -372,6 +495,7 @@
   font-size: 14px;
   outline: none;
   transition: border-color var(--transition-speed);
+  min-width: 0;
 }
 
 .input:focus {
@@ -389,6 +513,7 @@
   height: auto;
   transition: opacity 0.2s, transform 0.1s;
   box-shadow: 0 4px 12px rgba(88, 166, 255, 0.3);
+  flex-shrink: 0;
 }
 
 .sendBtn:hover:not(:disabled) {
@@ -406,23 +531,7 @@
   transform: none;
 }
 
-/* Modals & Edit */
-.editBox { display: flex; flex-direction: column; gap: 8px; }
-.editInput {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 8px;
-  padding: 8px 12px;
-  color: #fff;
-  outline: none;
-}
-.editActions { display: flex; gap: 8px; justify-content: flex-end; }
-.smallBtn, .smallBtnPrimary {
-  border: none; border-radius: 6px; padding: 6px 12px; font-size: 11px; font-weight: 600;
-}
-.smallBtn { background: rgba(255,255,255,0.2); color: #fff; }
-.smallBtnPrimary { background: var(--accent-purple); color: #fff; }
-
+/* Modals */
 .modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
 .backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
 .modalCard {
@@ -441,6 +550,50 @@
 .userMeta { text-align: left; }
 
 @media (max-width: 900px) {
-  .wrap { grid-template-columns: 1fr; }
-  .sidebar { display: none; } /* On mobile would need a toggle, assuming simple full width for now */
+  .wrap { 
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    margin: 0;
+    height: 100vh;
+  }
+  .sidebar, .chat {
+    border-radius: 0;
+    border: none;
+    width: 100%;
+    flex: 1; /* Make both take full available height */
+  }
+  .msgList {
+    padding: 12px 8px;
+  }
+  .bubble {
+    max-width: 85%;
+  }
+  .sidebar { 
+    display: flex; 
+  }
+  .chat { 
+    display: none; 
+  }
+  .wrap.mobileChatOpen .sidebar {
+    display: none;
+  }
+  .wrap.mobileChatOpen .chat {
+    display: flex;
+  }
+  .mobileBackBtn {
+    display: flex;
+  }
+  .composer {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .input {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  .sendBtn {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
 }
