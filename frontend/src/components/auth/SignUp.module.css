@@ -115,6 +115,40 @@
     font-weight: 650;
 }
 
+.inlineError {
+    border-radius: 14px;
+    padding: 12px 12px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 13px;
+}
+
+.inlineErrorTitle {
+    font-weight: 900;
+    margin-bottom: 6px;
+}
+
+.inlineErrorText {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.inlineNext {
+    margin-top: 10px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.inlineNextTitle {
+    font-weight: 900;
+    margin-bottom: 6px;
+}
+
+.inlineNext ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
 .signUpText {
     margin: 14px 0 0;
     text-align: center;

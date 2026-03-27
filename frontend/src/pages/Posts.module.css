@@ -24,6 +24,81 @@
   padding: 18px;
 }
 
+.composerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.modeTabs {
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.modeTab {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 900;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.modeTabActive {
+  background: rgba(99, 102, 241, 0.25);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.modeTab:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.jobFields {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.fieldInput {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 16, 30, 0.35);
+  color: rgba(255, 255, 255, 0.92);
+  padding: 12px 14px;
+  outline: none;
+}
+
+.fieldInput:focus {
+  border-color: rgba(99, 102, 241, 0.85);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+  background: rgba(10, 16, 30, 0.55);
+}
+
+.jobHint {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
 .sectionTitle {
   margin: 0 0 12px;
   font-size: 22px;
@@ -58,6 +133,9 @@
 
 .postInput {
   min-height: 120px;
+  height: 180px;
+  max-height: 320px;
+  overflow-y: auto;
   resize: vertical;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 12px;
@@ -175,6 +253,71 @@
   margin-bottom: 8px;
 }
 
+.authorBlock {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.35), rgba(16, 185, 129, 0.25));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  color: #fff;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.jobCardTop {
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.jobTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.jobMeta {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+@media (max-width: 640px) {
+  .fieldRow {
+    grid-template-columns: 1fr;
+  }
+  .composerHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 .authorName {
   margin: 0;
   font-weight: 700;

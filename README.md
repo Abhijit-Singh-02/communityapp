@@ -1,180 +1,571 @@
-# Community App
+## Project - Tech Community App
 
-Full-stack social community platform inspired by LinkedIn/Instagram style interactions:
-- user authentication (signup/login)
-- profile management
-- post creation with media upload to AWS S3
-- home feed and posts feed UI
+### Key points
+- This repository is a monorepo with **frontend** (Vite + React) and **backend** (Express + MongoDB).
+- Authentication uses **Authorization header** with **Bearer JWT** for protected routes.
+- Media uploads (profile picture + post media) are stored in **AWS S3** and saved as public URLs.
+- Realtime messaging uses **Socket.IO** on the same server as the REST API.
 
-## Tech Stack
+## Tech stack
+- **Frontend:** React, Vite, React Router, Axios, Socket.IO client, CSS Modules, MUI Icons
+- **Backend:** Express, MongoDB + Mongoose, JWT, Multer, AWS SDK (S3), Socket.IO
 
-- **Frontend:** React 19, React Router, Axios, Vite
-- **Backend:** Express, MongoDB + Mongoose, JWT auth, Multer, AWS SDK (S3)
-
-## Monorepo Structure
+## Repository layout
 
 ```text
 communityapp/
-  frontend/   # React + Vite client
-  backend/    # Express API + MongoDB models/controllers
+  frontend/
+  backend/
 ```
 
-## Features
+## Setup
 
-### Authentication & User
-- Signup and login
-- JWT-based protected routes
-- Profile fetch and profile update
-- Profile picture upload to AWS S3
-
-### Posts
-- Create text or media posts
-- Media (image/video) upload to AWS S3
-- Feed endpoint with pagination
-- Rich post model for social use-cases (visibility, hashtags, mentions, counters)
-
-### Frontend UX
-- Modern auth pages and nav
-- Posts composer with text formatting shortcuts (`bold`, `italic`, `heading`, `quote`, `list`, `inline code`)
-- Home feed cards with author name and follow button UI
-
-## Backend Setup
-
-### 1) Install dependencies
+### Backend
 
 ```bash
 cd backend
 npm install
-```
-
-### 2) Create `.env`
-
-Backend reads these keys from `backend/config.mjs`:
-
-```env
-PORT=8080
-MONGO_URI=<your-mongodb-uri>
-JWT_SECRET=<your-jwt-secret>
-accessKey=<aws-access-key-id>
-secretAccessKey=<aws-secret-access-key>
-region=<aws-region>   # e.g. ap-south-1 or us-east-1
-```
-
-### 3) Run backend
-
-```bash
 npm run test
 ```
 
-> Current script runs `node index.mjs`. If you use nodemon locally, run it manually or add a `dev` script.
+Create `backend/.env`:
 
-## Frontend Setup
+```env
+PORT=8080
+MONGO_URI=mongodb://...
+JWT_SECRET=your-secret
 
-### 1) Install dependencies
+accessKey=AWS_ACCESS_KEY_ID
+secretAccessKey=AWS_SECRET_ACCESS_KEY
+region=ap-south-1
+```
+
+### Frontend
 
 ```bash
 cd frontend
 npm install
+npm run dev
 ```
 
-### 2) Create `.env`
+Create `frontend/.env`:
 
 ```env
 VITE_BACKEND_URL=http://localhost:8080
 ```
 
-### 3) Run frontend
+## Response
 
-```bash
-npm run dev
+### Successful Response structure
+```yaml
+{
+  "message": "Success",
+  "...": "endpoint-specific fields"
+}
 ```
 
-## API Endpoints (Current)
+### Error Response structure
+```yaml
+{
+  "message": "Error message"
+}
+```
 
-Base URL: `http://localhost:8080`
+> Notes:
+> - Most endpoints return `{ message, ... }` and may include `user`, `post`, `comment`, etc.
+> - Authentication failures return `401` with a message like `Unauthorized` or `Please login to access this resource`.
 
-### Auth & Profile
+## FEATURE I - Authentication & Profile
 
-- `POST /signup`
-  - body: `{ username, email, password, phoneNumber }`
-- `POST /login`
-  - body: `{ email, password }`
-  - returns JWT in response header `authorization: Bearer <token>`
-- `GET /profile` (protected)
-- `PUT /profile` (protected, multipart)
-  - file field: `profilePicture`
+### Models
+- User (`backend/src/models/userModel.mjs`)
+```yaml
+{
+  username: {string, required, unique},
+  email: {string, required, unique},
+  password: {string, required},
+  phoneNumber: {string, required},
+  profilePicture: {string},  # s3 url
+  bio: {string},
+  followers: {ObjectId[]},
+  following: {ObjectId[]},
+  notificationsLastSeenAt: {Date},
+  createdAt: {timestamp},
+  updatedAt: {timestamp}
+}
+```
 
-### Posts
+### APIs
+#### POST /signup
+- Create a user.
+- Body: `{ username, email, password, phoneNumber }`
+- Response
+  - On success (201):
+```yaml
+{
+  "message": "User created successfully",
+  "user": { "_id": "...", "username": "...", "email": "...", "phoneNumber": "...", "...": "..." }
+}
+```
 
-- `POST /posts` (protected, multipart)
-  - supports:
-    - `content` (text)
-    - `mediaType` (`text`, `image`, `video`, `carousel`)
-    - file field `mediaFile` (image/video uploaded to S3)
-- `GET /posts` (protected)
-  - query params: `page`, `limit`
+#### POST /login
+- Login with email + password.
+- Body: `{ email, password }`
+- Returns JWT in response header `authorization: Bearer <token>` and also in JSON body as `token`.
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "Login successful",
+  "token": "jwt-token",
+  "user": { "id": "userId", "username": "username" }
+}
+```
 
-## Data Models
+#### GET /profile (Authentication required)
+- Returns profile fields.
+- Includes: `followersCount`, `followingCount`, `followingIds`.
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "Profile fetched successfully",
+  "user": {
+    "_id": "...",
+    "username": "...",
+    "email": "...",
+    "followersCount": 0,
+    "followingCount": 0,
+    "followingIds": ["..."]
+  }
+}
+```
 
-### User (`backend/src/models/userModel.mjs`)
+#### PUT /profile (Authentication required, multipart)
+- Update profile.
+- Multipart field: `profilePicture` (image)
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "Profile updated successfully",
+  "updatedUser": { "_id": "...", "username": "...", "profilePicture": "https://..." }
+}
+```
 
-Core fields:
-- `username`, `email`, `password`, `phoneNumber`
-- `profilePicture`, `bio`
-- `address` object (`street`, `city`, `state`, `zip`, `country`)
-- `education[]`, `dob`, `gender`, `maritalStatus`, `occupation`
-- status flags (`isDeleted`, `isActive`, `isVerified`, etc.)
+## FEATURE II - Follow / Connect
 
-### Post (`backend/src/models/postModel.mjs`)
+### APIs
+#### GET /users (Authentication required)
+- List users for Connect + search.
+- Query: `page`, `limit`, `q` (search by username)
+- Returns `users[]` with `isFollowing`.
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "Users",
+  "page": 1,
+  "limit": 20,
+  "total": 123,
+  "users": [{ "_id": "...", "username": "...", "profilePicture": "https://...", "isFollowing": false }]
+}
+```
 
-Core fields:
-- `userId` (ref to `User`)
-- `content` (max 3000 chars)
-- `media` (URL), `mediaType`
-- `visibility`, `location`
-- `hashtags[]`, `mentions[]`
-- engagement counters: `likes`, `commentsCount`, `sharesCount`
-- `isEdited`, `status`
-- `createdAt`, `updatedAt`
+#### POST /follow (Authentication required)
+- Body: `{ followingUserId }`
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "User followed successfully",
+  "user": { "_id": "...", "...": "..." },
+  "followingUser": { "_id": "...", "...": "..." },
+  "followersCount": 10,
+  "followingCount": 5
+}
+```
 
-## Validation Layer
+#### POST /unfollow (Authentication required)
+- Body: `{ followingUserId }`
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "Unfollowed successfully",
+  "user": { "_id": "...", "...": "..." },
+  "followingUser": { "_id": "...", "...": "..." },
+  "followersCount": 9,
+  "followingCount": 4
+}
+```
 
-Reusable validators live in:
-- `backend/src/utils/validate.mjs`
+#### GET /users/:userId (Authentication required)
+- Public profile card:
+  - `followersCount`, `followingCount`, `isFollowing`
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "User profile",
+  "profile": { "_id": "...", "username": "...", "followersCount": 0, "followingCount": 0, "isFollowing": false }
+}
+```
 
-Current helpers include:
-- object id validation
-- pagination normalization
-- post payload validation/sanitization
-- string and required-field helpers
+#### GET /users/:userId/followers (Authentication required)
+#### GET /users/:userId/following (Authentication required)
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "Followers|Following",
+  "page": 1,
+  "limit": 20,
+  "total": 10,
+  "users": [{ "_id": "...", "username": "...", "profilePicture": "https://..." }]
+}
+```
 
-## AWS Upload Notes
+## FEATURE III - Posts / Reels
 
-- Upload helper: `backend/src/aws/uploadProfile.mjs`
-- Uses S3 bucket currently hardcoded in helper
-- Requires valid AWS credentials in backend `.env`
+### Models
+- Post (`backend/src/models/postModel.mjs`)
+```yaml
+{
+  userId: {ObjectId, required},
+  postType: {string, enum["post","job"]},
+  content: {string, maxLen 8000},
+  media: {string},           # s3 url
+  mediaType: {string},       # text|image|video|carousel
+  likes: {number},
+  likedBy: {ObjectId[]},
+  commentsCount: {number},
+  sharesCount: {number},
+  job: {                     # only when postType=job
+    title: {string},
+    company: {string},
+    location: {string},
+    employmentType: {string}
+  },
+  status: {string, enum["active","archived","deleted"]},
+  createdAt: {timestamp},
+  updatedAt: {timestamp}
+}
+```
 
-## Follow / profile
+### APIs
+#### POST /posts (Authentication required, multipart)
+- Create a normal post or a job post.
+- Normal post:
+  - `postType=post`, `content`, `mediaType`, optional file `mediaFile`
+- Job post:
+  - `postType=job`, `jobTitle`, `company`, `jobLocation`, `employmentType`, `content`
+- Response
+  - On success (201):
+```yaml
+{
+  "message": "Post created successfully",
+  "post": { "_id": "...", "postType": "post|job", "content": "...", "media": "https://...", "job": { "title": "..." } }
+}
+```
 
-- `POST /follow` — body `{ followingUserId }` (auth). Fixed ObjectId handling vs strings.
-- `POST /unfollow` — body `{ followingUserId }` (auth).
-- `GET /users/:userId` — public profile: `followersCount`, `followingCount`, `isFollowing` (auth).
-- `GET /users/:userId/followers` and `GET /users/:userId/following` — paginated lists (`page`, `limit`).
-- `GET /profile` — includes `followersCount`, `followingCount`, `followingIds` for the current user.
-- Home feed follow button calls follow/unfollow; profile route `/:userId/:username/profile` loads own vs other user with followers/following modals.
+#### GET /posts (Authentication required)
+- Feed
+- Query: `page`, `limit`
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "Posts fetched successfully",
+  "page": 1,
+  "limit": 20,
+  "count": 20,
+  "posts": [{ "_id": "...", "userId": { "_id": "...", "username": "...", "profilePicture": "https://..." }, "content": "..." }]
+}
+```
 
-## Known Improvements / TODO
+#### GET /posts/:userId (Authentication required)
+- Posts by user
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "Posts fetched successfully",
+  "posts": [{ "_id": "...", "postType": "post|job", "content": "..." }]
+}
+```
 
-- Add post delete/update endpoints and ownership checks
-- Add centralized error middleware
-- Add tests and API docs (OpenAPI/Swagger)
+#### DELETE /posts/:postId (Authentication required)
+- Owner only; permanently deletes post + its comments.
+- Response
+  - On success (200):
+```yaml
+{ "message": "Post deleted permanently" }
+```
 
-## Security Notes
+#### POST /posts/:postId/like (Authentication required)
+#### POST /posts/:postId/share (Authentication required)
+- Response
+  - Like success (200):
+```yaml
+{ "message": "Like updated", "post": { "_id": "...", "likes": 1, "likedBy": ["..."] } }
+```
+  - Share success (200):
+```yaml
+{ "message": "Share recorded", "post": { "_id": "...", "sharesCount": 1 } }
+```
 
-- Never commit `.env` files or secrets
-- Rotate any credential if it was ever pushed to git history
-- Keep `node_modules` out of git
+#### GET /reels (Authentication required)
+- Returns video posts (used by Reels page).
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "Reels fetched successfully",
+  "page": 1,
+  "limit": 20,
+  "count": 10,
+  "reels": [{ "_id": "...", "mediaType": "video", "media": "https://..." }]
+}
+```
+
+## FEATURE IV - Comments (Threaded)
+
+### Models
+- Comment (`backend/src/models/commentModel.mjs`)
+```yaml
+{
+  postId: {ObjectId, required},
+  userId: {ObjectId, required},
+  parentCommentId: {ObjectId|null},
+  text: {string, maxLen 1000},
+  likes: {number},
+  likedBy: {ObjectId[]},
+  status: {string, enum["active","deleted"]},
+  createdAt: {timestamp},
+  updatedAt: {timestamp}
+}
+```
+
+### APIs
+#### GET /posts/:postId/comments (Authentication required)
+- Query: `page`, `limit`, `parentId` (optional)
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "Comments fetched",
+  "page": 1,
+  "limit": 20,
+  "total": 5,
+  "comments": [{ "_id": "...", "text": "...", "userId": { "_id": "...", "username": "...", "profilePicture": "https://..." } }]
+}
+```
+
+#### GET /posts/:postId/comments/:commentId/replies (Authentication required)
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "Replies fetched",
+  "replies": [{ "_id": "...", "text": "...", "userId": { "_id": "...", "username": "..." } }]
+}
+```
+
+#### POST /posts/:postId/comments (Authentication required)
+- Body: `{ text, parentCommentId? }`
+- Response
+  - On success (201):
+```yaml
+{
+  "message": "Comment added",
+  "comment": { "_id": "...", "text": "...", "userId": { "_id": "...", "username": "..." } },
+  "post": { "_id": "...", "commentsCount": 1 }
+}
+```
+
+#### POST /comments/:commentId/like (Authentication required)
+#### DELETE /comments/:commentId (Authentication required)
+- Comment author or post owner; cascades to replies; returns `deletedIds[]`.
+- Response
+  - Like success (200):
+```yaml
+{ "message": "OK", "comment": { "_id": "...", "likes": 1, "likedBy": ["..."] } }
+```
+  - Delete success (200):
+```yaml
+{ "message": "Comment deleted", "post": { "_id": "...", "commentsCount": 0 }, "deletedIds": ["..."] }
+```
+
+## FEATURE V - Jobs
+
+### APIs
+#### GET /jobs (Authentication required)
+- Returns only job posts (`postType=job`).
+- Includes poster email (for apply button via `mailto:`).
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "Jobs fetched successfully",
+  "page": 1,
+  "limit": 20,
+  "total": 3,
+  "jobs": [{ "_id": "...", "job": { "title": "..." }, "userId": { "username": "...", "email": "..." } }]
+}
+```
+
+## FEATURE VI - Notifications
+
+### APIs
+#### GET /notifications (Authentication required)
+- New posts/jobs created by followed users since last seen.
+- Response
+  - On success (200):
+```yaml
+{
+  "message": "Notifications",
+  "since": "2026-01-01T00:00:00.000Z",
+  "counts": { "all": 2, "posts": 1, "jobs": 1 },
+  "items": [{ "_id": "...", "postType": "post|job", "createdAt": "..." }]
+}
+```
+
+#### POST /notifications/seen (Authentication required)
+- Mark all notifications as read.
+- Response
+  - On success (200):
+```yaml
+{ "message": "OK", "seenAt": "2026-01-01T00:00:00.000Z" }
+```
+
+## FEATURE VII - Messaging (LinkedIn-style)
+
+### Models
+- Conversation (`backend/src/models/conversationModel.mjs`)
+- Message (`backend/src/models/messageModel.mjs`)
+
+### REST APIs (Authentication required)
+#### GET /conversations
+#### POST /conversations
+- Body: `{ otherUserId }`
+
+#### GET /conversations/:conversationId/messages
+#### POST /conversations/:conversationId/read
+
+#### PATCH /messages/:messageId
+- Edit own message
+- Body: `{ text }`
+
+#### DELETE /messages/:messageId
+- Delete own message (soft delete)
+
+### Response formats
+#### GET /conversations
+- On success (200):
+```yaml
+{
+  "message": "Conversations",
+  "conversations": [{
+    "_id": "conversationId",
+    "otherUser": { "_id": "...", "username": "...", "profilePicture": "https://..." },
+    "lastMessageText": "Hello",
+    "lastMessageAt": "2026-01-01T00:00:00.000Z",
+    "unreadCount": 0
+  }]
+}
+```
+
+#### POST /conversations
+- On success (201):
+```yaml
+{
+  "message": "Conversation ready",
+  "conversation": { "_id": "conversationId", "otherUser": { "_id": "...", "username": "..." } }
+}
+```
+
+#### GET /conversations/:conversationId/messages
+- On success (200):
+```yaml
+{
+  "message": "Messages",
+  "page": 1,
+  "limit": 100,
+  "messages": [{
+    "_id": "messageId",
+    "conversationId": "conversationId",
+    "senderId": "userId",
+    "text": "Message text",
+    "isEdited": false,
+    "editedAt": null,
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  }]
+}
+```
+
+#### POST /conversations/:conversationId/read
+- On success (200):
+```yaml
+{ "message": "OK" }
+```
+
+#### PATCH /messages/:messageId
+- On success (200):
+```yaml
+{
+  "message": "Message edited",
+  "messageDoc": { "_id": "messageId", "text": "new text", "isEdited": true, "editedAt": "..." }
+}
+```
+
+#### DELETE /messages/:messageId
+- On success (200):
+```yaml
+{ "message": "Message deleted", "messageId": "messageId" }
+```
+
+### Socket.IO
+Client connection:
+```js
+io(serverUrl, { auth: { token } })
+```
+
+Events (client → server):
+- `join_conversation` `{ conversationId }`
+- `send_message` `{ conversationId, text }` (or `{ otherUserId, text }`)
+- `typing` `{ conversationId, isTyping }`
+- `read` `{ conversationId }`
+- `edit_message` `{ messageId, text }`
+- `delete_message` `{ messageId }`
+
+Events (server → client):
+- `message_new`
+- `message_edited`
+- `message_deleted`
+- `typing`
+- `read`
+- `inbox_updated`
+
+## Frontend routes
+
+- `/` Home
+- `/:userId/posts` Posts + Job composer
+- `/:userId/reels` Reels
+- `/:userId/connect` Connect
+- `/:userId/jobs` Jobs
+- `/:userId/notifications` Notifications
+- `/:userId/messages` Messaging
+- `/:userId/:username/profile` Profile
+
+## Notes
+- Restart the backend after adding models/routes (Socket.IO and schema changes).
+- Vite env vars must start with `VITE_` and are read via `import.meta.env`.
+- S3 upload helper: `backend/src/aws/uploadProfile.mjs`.
+
+## Security
+- Do not commit `.env` files.
+- Rotate any credential if exposed.
 
 ## License
-
 ISC

@@ -13,25 +13,38 @@ export default function SignUp() {
     confirmPassword: '',
     phoneNumber: '',
   })
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
   const navigate = useNavigate()
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setError('')
     if(formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match')
+      setError('Passwords do not match.')
+      return
+    }
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters.')
       return
     }
     try {
+      setBusy(true)
       const response = await axios.post(`${serverUrl}/signup`, formData,{'Content-Type': 'application/json'})
       if(response.status === 201) {
-        alert('User created successfully')
         navigate('/login')
       }
-      console.log(response)
     } catch (error) {
-      console.log(error)
+      const msg = error?.response?.data?.message
+      if (error?.response?.status === 400) {
+        setError(msg || 'Please check the details and try again.')
+      } else {
+        setError(msg || 'We could not create your account right now. Please try again in a moment.')
+      }
+    } finally {
+      setBusy(false)
     }
   }
   return (
@@ -52,7 +65,20 @@ export default function SignUp() {
           <input type="password" placeholder="Password" name="password" value={formData.password} onChange={handleChange} />
           <input type="password" placeholder="Confirm Password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} />
           <input type="text" placeholder="Phone Number" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} />
-          <CustomButton text="Sign Up" handler={handleSubmit} />
+          {error && (
+            <div className={styles.inlineError}>
+              <div className={styles.inlineErrorTitle}>Couldn’t create account</div>
+              <div className={styles.inlineErrorText}>{error}</div>
+              <div className={styles.inlineNext}>
+                <div className={styles.inlineNextTitle}>Next steps</div>
+                <ul>
+                  <li>Check that your email and username are unique.</li>
+                  <li>Use a strong password (8+ characters).</li>
+                </ul>
+              </div>
+            </div>
+          )}
+          <CustomButton text={busy ? "Creating..." : "Sign Up"} handler={handleSubmit} />
         </form>
         <p className={styles.signUpText}>
           Already have an account? <Link to="/login">Login</Link>

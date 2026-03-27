@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     phoneNumber: { type: String, required: true },
     profilePicture: { type: String, default: null },
+    coverImage: { type: String, default: null },
     bio: { type: String, default: null },
     followers: { type: [mongoose.Schema.Types.ObjectId], ref: 'User', default: [] },
     following: { type: [mongoose.Schema.Types.ObjectId], ref: 'User', default: [] },
@@ -27,6 +28,9 @@ const userSchema = new mongoose.Schema({
     isAdmin: { type: Boolean, default: false },
     isSuperAdmin: { type: Boolean, default: false },
     isSuperAdmin: { type: Boolean, default: false },
+    notificationsLastSeenAt: { type: Date, default: null },
+    resetPasswordTokenHash: { type: String, default: null, index: true },
+    resetPasswordExpiresAt: { type: Date, default: null, index: true },
 },{timestamps: true})
 const userModel = mongoose.model('User', userSchema)
 export default userModel;

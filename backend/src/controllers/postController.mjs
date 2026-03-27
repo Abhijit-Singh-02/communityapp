@@ -7,6 +7,7 @@ import {
     normalizePagination,
     validateObjectId,
     validatePostPayload,
+    validateJobPayload,
 } from "../utils/validate.mjs";
 
 const createPost = async (req, res) => {
@@ -30,27 +31,46 @@ const createPost = async (req, res) => {
             mediaType: req.body?.mediaType || inferredMediaType || 'text',
         }
 
-        const validation = validatePostPayload(payload)
-        if (!validation.valid) {
-            return res.status(400).send({ message: validation.message })
-        }
+        const postTypeRaw = typeof req.body?.postType === 'string' ? req.body.postType : ''
+        const postType = postTypeRaw && ['post', 'job'].includes(postTypeRaw) ? postTypeRaw : 'post'
+
+        const validation = postType === 'job' ? validateJobPayload(payload) : validatePostPayload(payload)
+        if (!validation.valid) return res.status(400).send({ message: validation.message })
 
         const user = await userModel.findById(userId).select('_id')
         if (!user) {
             return res.status(404).send({ message: 'User not found' })
         }
 
-        const { content, media, mediaType, visibility, location, hashtags, mentions } = validation.data
-        const post = await postModel.create({
-            userId,
-            content,
-            media,
-            mediaType,
-            visibility,
-            location,
-            hashtags,
-            mentions,
-        })
+        let post
+        if (postType === 'job') {
+            const { title, company, location, employmentType, content } = validation.data
+            post = await postModel.create({
+                userId,
+                postType: 'job',
+                content,
+                media: '',
+                mediaType: 'text',
+                visibility: 'public',
+                location,
+                hashtags: [],
+                mentions: [],
+                job: { title, company, location, employmentType },
+            })
+        } else {
+            const { content, media, mediaType, visibility, location, hashtags, mentions } = validation.data
+            post = await postModel.create({
+                userId,
+                postType: 'post',
+                content,
+                media,
+                mediaType,
+                visibility,
+                location,
+                hashtags,
+                mentions,
+            })
+        }
 
         return res.status(201).send({ message: 'Post created successfully', post })
     } catch (error) {
@@ -75,6 +95,26 @@ const getPosts = async (req, res) => {
             count: posts.length,
             posts,
         })
+    } catch (error) {
+        return res.status(500).send({ message: 'Internal server error' })
+    }
+}
+
+const getJobs = async (req, res) => {
+    try {
+        const { page, limit, skip } = normalizePagination(req.query)
+        const filter = { status: 'active', postType: 'job' }
+        const [jobs, total] = await Promise.all([
+            postModel
+                .find(filter)
+                .sort({ createdAt: -1 })
+                .populate('userId', 'username profilePicture email')
+                .skip(skip)
+                .limit(limit),
+            postModel.countDocuments(filter),
+        ])
+
+        return res.status(200).send({ message: 'Jobs fetched successfully', page, limit, total, jobs })
     } catch (error) {
         return res.status(500).send({ message: 'Internal server error' })
     }
@@ -170,5 +210,17 @@ const sharePost = async (req, res) => {
         return res.status(500).send({ message: 'Internal server error' })
     }
 }
-
-export { createPost, getPosts, getPostsByUserId, toggleLikePost, sharePost, deletePost }
+const getReels = async (req, res) => {
+    try {
+        const { page, limit, skip } = normalizePagination(req.query)
+        const reels = await postModel.find({ status: 'active', mediaType: 'video', visibility: 'public' })
+        .sort({ createdAt: -1 })
+        .populate('userId', 'username profilePicture')
+        .skip(skip)
+        .limit(limit)
+        return res.status(200).send({ message: 'Reels fetched successfully', page, limit, count: reels.length, reels })
+    } catch (error) {
+        return res.status(500).send({ message: 'Internal server error' })
+    }
+}
+export { createPost, getPosts, getJobs, getPostsByUserId, toggleLikePost, sharePost, deletePost, getReels }

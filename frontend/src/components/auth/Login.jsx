@@ -10,13 +10,21 @@ export default function Login() {
     email: '',
     password: '',
   })
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
   const navigate = useNavigate()
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setError('')
+    if (!formData.email.trim() || !formData.password) {
+      setError('Enter your email and password to continue.')
+      return
+    }
     try {
+      setBusy(true)
       const response = await axios.post(`${serverUrl}/login`, formData,{'Content-Type': 'application/json'})
       if(response.status === 200) {
         // Prefer token from JSON body (works with CORS); fallback to header.
@@ -34,10 +42,19 @@ export default function Login() {
         navigate(`/`)
         localStorage.setItem('username', username)
       }else{
-        alert(response.data.message)
+        setError(response.data.message || 'Login failed.')
       }
     } catch (error) {
-      console.log(error)
+      const msg = error?.response?.data?.message
+      if (msg && msg.toLowerCase().includes('invalid email or password')) {
+        setError('Incorrect email or password. Check your details and try again.')
+      } else if (error?.response?.status === 400) {
+        setError(msg || 'Please check your details and try again.')
+      } else {
+        setError(msg || 'We could not sign you in right now. Please try again in a moment.')
+      }
+    } finally {
+      setBusy(false)
     }
   }
   return (
@@ -54,8 +71,24 @@ export default function Login() {
         <form className={styles.loginForm}>
           <input type="email" placeholder="Email" name="email" onChange={handleChange} value={formData.email}/>
           <input type="password" placeholder="Password" name="password" onChange={handleChange} value={formData.password}/>
-          <CustomButton text="Login" handler={handleSubmit}/>
+          {error && (
+            <div className={styles.inlineError}>
+              <div className={styles.inlineErrorTitle}>Couldn’t sign you in</div>
+              <div className={styles.inlineErrorText}>{error}</div>
+              <div className={styles.inlineNext}>
+                <div className={styles.inlineNextTitle}>Next steps</div>
+                <ul>
+                  <li>Double-check your email and password.</li>
+                  <li>If you forgot your password, reset it below.</li>
+                </ul>
+              </div>
+            </div>
+          )}
+          <CustomButton text={busy ? "Signing in..." : "Login"} handler={handleSubmit}/>
         </form>
+        <p className={styles.forgotRow}>
+          <Link to="/forgot-password">Forgot password?</Link>
+        </p>
         <p className={styles.loginText}>Don't have an account? <Link to="/signup">Sign Up</Link></p>
       </main>
     </div>

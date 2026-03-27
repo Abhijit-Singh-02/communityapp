@@ -6,11 +6,17 @@ const postSchema = new mongoose.Schema({
         required: true,
         index: true,
     },
+    postType: {
+        type: String,
+        default: 'post',
+        enum: ['post', 'job'],
+        index: true,
+    },
     content: {
         type: String,
         default: '',
         trim: true,
-        maxlength: 3000,
+        maxlength: 8000,
     },
     // Kept as a string URL for compatibility with current frontend.
     media: {
@@ -68,10 +74,17 @@ const postSchema = new mongoose.Schema({
         default: 'active',
         enum: ['active', 'archived', 'deleted'],
     },
+    job: {
+        title: { type: String, default: '', trim: true, maxlength: 140 },
+        company: { type: String, default: '', trim: true, maxlength: 140 },
+        location: { type: String, default: '', trim: true, maxlength: 140 },
+        employmentType: { type: String, default: '', trim: true, maxlength: 40 },
+    },
 }, { timestamps: true })
 
 postSchema.index({ userId: 1, createdAt: -1 })
 postSchema.index({ createdAt: -1 })
+postSchema.index({ postType: 1, createdAt: -1 })
 
 const postModel = mongoose.model('Post', postSchema)
 export default postModel

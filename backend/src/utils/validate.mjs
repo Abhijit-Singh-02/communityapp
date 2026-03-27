@@ -68,8 +68,8 @@ const validatePostPayload = (payload = {}) => {
         return { valid: false, message: 'Post content or media is required' }
     }
 
-    if (content.length > 3000) {
-        return { valid: false, message: 'Post content cannot exceed 3000 characters' }
+    if (content.length > 8000) {
+        return { valid: false, message: 'Post content cannot exceed 8000 characters' }
     }
 
     if (mediaType && !['image', 'video', 'text', 'carousel'].includes(mediaType)) {
@@ -94,6 +94,34 @@ const validatePostPayload = (payload = {}) => {
     }
 }
 
+const validateJobPayload = (payload = {}) => {
+    const title = normalizeString(payload.jobTitle ?? payload.title)
+    const company = normalizeString(payload.company)
+    const location = normalizeString(payload.jobLocation ?? payload.location)
+    const employmentType = normalizeString(payload.employmentType ?? payload.jobType)
+    const content = normalizeString(payload.content)
+
+    if (!title) return { valid: false, message: 'Job title is required' }
+    if (!content) return { valid: false, message: 'Job description is required' }
+
+    if (title.length > 140) return { valid: false, message: 'Job title is too long' }
+    if (company.length > 140) return { valid: false, message: 'Company is too long' }
+    if (location.length > 140) return { valid: false, message: 'Location is too long' }
+    if (employmentType.length > 40) return { valid: false, message: 'Employment type is too long' }
+    if (content.length > 8000) return { valid: false, message: 'Job description cannot exceed 8000 characters' }
+
+    return {
+        valid: true,
+        data: {
+            title,
+            company,
+            location,
+            employmentType,
+            content,
+        },
+    }
+}
+
 export {
     isNonEmptyString,
     normalizeString,
@@ -102,5 +130,6 @@ export {
     validateObjectId,
     validateCommentPayload,
     validatePostPayload,
+    validateJobPayload,
     validateRequiredFields,
 }

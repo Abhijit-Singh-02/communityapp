@@ -1,0 +1,132 @@
+.page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0b1220 0%, #111b2e 55%, #13274a 100%);
+}
+
+.jobsContainer {
+  width: min(980px, calc(100% - 32px));
+  margin: 18px auto 10px;
+}
+
+.jobsHeader {
+  padding: 16px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.error {
+  width: min(980px, calc(100% - 32px));
+  margin: 12px auto 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.hint {
+  width: min(980px, calc(100% - 32px));
+  margin: 12px auto 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+
+.jobsList {
+  width: min(980px, calc(100% - 32px));
+  margin: 12px auto 36px;
+  display: grid;
+  gap: 12px;
+}
+
+.jobItem {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  padding: 16px;
+}
+
+.jobTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.jobTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.jobMeta {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.jobPoster {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.jobActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.applyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-weight: 900;
+  text-decoration: none;
+  background: #0a66c2;
+  color: #fff;
+  border: none;
+}
+
+.applyBtn:hover {
+  background: #004182;
+}
+
+.applyDisabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.jobDescription {
+  margin-top: 12px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .jobTop {
+    flex-direction: column;
+  }
+}

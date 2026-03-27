@@ -10,7 +10,12 @@ export default function Posts() {
   const navigate = useNavigate()
   const token = localStorage.getItem('token')
 
+  const [composerMode, setComposerMode] = useState('post') // 'post' | 'job'
   const [content, setContent] = useState('')
+  const [jobTitle, setJobTitle] = useState('')
+  const [jobCompany, setJobCompany] = useState('')
+  const [jobLocation, setJobLocation] = useState('')
+  const [jobEmploymentType, setJobEmploymentType] = useState('')
   const [selectedFile, setSelectedFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState('')
   const [posts, setPosts] = useState([])
@@ -36,8 +41,11 @@ export default function Posts() {
           id: post._id,
           authorId: post.userId?._id ?? post.userId,
           author: post.userId?.username || 'Unknown',
+          authorPicture: post.userId?.profilePicture || '',
           createdAt: post.createdAt,
+          postType: post.postType || 'post',
           text: post.content || '',
+          job: post.job || null,
           mediaType: post.mediaType || '',
           mediaName: '',
           mediaPreview: post.media || '',
@@ -73,7 +81,12 @@ export default function Posts() {
     setError('')
 
     const trimmedContent = content.trim()
-    if (!trimmedContent && !selectedFile) {
+    if (composerMode === 'job') {
+      if (!jobTitle.trim() || !trimmedContent) {
+        setError('Job title and description are required.')
+        return
+      }
+    } else if (!trimmedContent && !selectedFile) {
       setError('Write something or attach media before posting.')
       return
     }
@@ -81,12 +94,19 @@ export default function Posts() {
     try {
       setSubmitLoading(true)
       const formData = new FormData()
+      formData.append('postType', composerMode)
+      if (composerMode === 'job') {
+        formData.append('jobTitle', jobTitle.trim())
+        formData.append('company', jobCompany.trim())
+        formData.append('jobLocation', jobLocation.trim())
+        formData.append('employmentType', jobEmploymentType.trim())
+      }
       formData.append('content', trimmedContent)
-      if (selectedFile) {
+      if (composerMode !== 'job' && selectedFile) {
         formData.append('mediaFile', selectedFile)
         if (selectedFile.type.startsWith('image/')) formData.append('mediaType', 'image')
         else if (selectedFile.type.startsWith('video/')) formData.append('mediaType', 'video')
-      } else {
+      } else if (composerMode !== 'job') {
         formData.append('mediaType', 'text')
       }
 
@@ -102,8 +122,11 @@ export default function Posts() {
           id: created._id,
           authorId: created.userId?._id ?? created.userId ?? localStorage.getItem('userId'),
           author: localStorage.getItem('username') || 'You',
+          authorPicture: created.userId?.profilePicture || '',
           createdAt: created.createdAt || new Date().toISOString(),
+          postType: created.postType || composerMode,
           text: created.content || '',
+          job: created.job || null,
           mediaType: created.mediaType || '',
           mediaName: '',
           mediaPreview: created.media || '',
@@ -117,6 +140,10 @@ export default function Posts() {
       }
 
       setContent('')
+      setJobTitle('')
+      setJobCompany('')
+      setJobLocation('')
+      setJobEmploymentType('')
       setSelectedFile(null)
       setPreviewUrl('')
     } catch (err) {
@@ -128,7 +155,12 @@ export default function Posts() {
   }
 
   const handleCancelPost = () => {
+    setComposerMode('post')
     setContent('')
+    setJobTitle('')
+    setJobCompany('')
+    setJobLocation('')
+    setJobEmploymentType('')
     setSelectedFile(null)
     setPreviewUrl('')
     setError('')
@@ -243,25 +275,82 @@ export default function Posts() {
         <HeaderNav />
         <div className={styles.postsContainer}>
           <section className={styles.postComposerCard}>
-            <h2 className={styles.sectionTitle}>Create Post</h2>
+            <div className={styles.composerHeader}>
+              <h2 className={styles.sectionTitle}>{composerMode === 'job' ? 'Post a Job' : 'Create Post'}</h2>
+              <div className={styles.modeTabs}>
+                <button
+                  type="button"
+                  className={`${styles.modeTab} ${composerMode === 'post' ? styles.modeTabActive : ''}`}
+                  onClick={() => setComposerMode('post')}
+                  disabled={submitLoading}
+                >
+                  Post
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.modeTab} ${composerMode === 'job' ? styles.modeTabActive : ''}`}
+                  onClick={() => setComposerMode('job')}
+                  disabled={submitLoading}
+                >
+                  Job
+                </button>
+              </div>
+            </div>
             <form className={styles.postForm} onSubmit={handleCreatePost}>
-              <div className={styles.formatBar}>
+              {composerMode !== 'job' && (
+                <div className={styles.formatBar}>
                 <button type="button" className={styles.formatBtn} onClick={() => applyFormat('bold')}>B</button>
                 <button type="button" className={styles.formatBtn} onClick={() => applyFormat('italic')}>I</button>
                 <button type="button" className={styles.formatBtn} onClick={() => applyFormat('heading')}>H</button>
                 <button type="button" className={styles.formatBtn} onClick={() => applyFormat('quote')}>"</button>
                 <button type="button" className={styles.formatBtn} onClick={() => applyFormat('bullet')}>•</button>
                 <button type="button" className={styles.formatBtn} onClick={() => applyFormat('code')}>{'</>'}</button>
-              </div>
+                </div>
+              )}
+
+              {composerMode === 'job' && (
+                <div className={styles.jobFields}>
+                  <input
+                    className={styles.fieldInput}
+                    value={jobTitle}
+                    onChange={(e) => setJobTitle(e.target.value)}
+                    placeholder="Job title (e.g., Frontend Developer)"
+                  />
+                  <div className={styles.fieldRow}>
+                    <input
+                      className={styles.fieldInput}
+                      value={jobCompany}
+                      onChange={(e) => setJobCompany(e.target.value)}
+                      placeholder="Company (optional)"
+                    />
+                    <input
+                      className={styles.fieldInput}
+                      value={jobLocation}
+                      onChange={(e) => setJobLocation(e.target.value)}
+                      placeholder="Location (optional)"
+                    />
+                  </div>
+                  <input
+                    className={styles.fieldInput}
+                    value={jobEmploymentType}
+                    onChange={(e) => setJobEmploymentType(e.target.value)}
+                    placeholder="Employment type (optional, e.g., Full-time)"
+                  />
+                  <p className={styles.jobHint}>
+                    Applicants will email you at your account email address.
+                  </p>
+                </div>
+              )}
               <textarea
                 ref={composerRef}
                 className={styles.postInput}
-                placeholder="Share your thoughts, project updates, or opportunities..."
+                placeholder={composerMode === 'job' ? 'Describe the role, requirements, and how to apply…' : 'Share your thoughts, project updates, or opportunities...'}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
               />
 
-              <div className={styles.postOptions}>
+              {composerMode !== 'job' && (
+                <div className={styles.postOptions}>
                 <label className={styles.uploadLabel}>
                   <input
                     className={styles.hiddenInput}
@@ -276,7 +365,8 @@ export default function Posts() {
                     {selectedFile.name}
                   </span>
                 )}
-              </div>
+                </div>
+              )}
 
               {previewUrl && (
                 <div className={styles.previewWrapper}>
@@ -314,15 +404,36 @@ export default function Posts() {
                 {posts.map((post) => (
                   <article key={post.id} className={styles.postCard}>
                     <div className={styles.postHeader}>
-                      <div>
-                        <p className={styles.authorName}>{post.author}</p>
-                        <p className={styles.postTime}>{formatDate(post.createdAt)}</p>
+                      <div className={styles.authorBlock}>
+                        <span className={styles.avatar} aria-hidden>
+                          {post.authorPicture ? (
+                            <img src={post.authorPicture} alt="" className={styles.avatarImg} />
+                          ) : (
+                            (post.author || 'U').slice(0, 1).toUpperCase()
+                          )}
+                        </span>
+                        <div>
+                          <p className={styles.authorName}>{post.author}</p>
+                          <p className={styles.postTime}>{formatDate(post.createdAt)}</p>
+                        </div>
                       </div>
+                      {post.postType === 'job' && <span className={styles.badge}>JOB</span>}
                     </div>
+
+                    {post.postType === 'job' && post.job?.title && (
+                      <div className={styles.jobCardTop}>
+                        <h3 className={styles.jobTitle}>{post.job.title}</h3>
+                        {(post.job.company || post.job.location || post.job.employmentType) && (
+                          <p className={styles.jobMeta}>
+                            {[post.job.company, post.job.location, post.job.employmentType].filter(Boolean).join(' · ')}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {post.text && <div className={styles.postText}>{renderFormattedText(post.text)}</div>}
 
-                    {post.mediaPreview && (
+                    {post.postType !== 'job' && post.mediaPreview && (
                       <div className={styles.postMediaWrap}>
                         {String(post.mediaType).includes('video') ? (
                           <video controls src={post.mediaPreview} className={styles.postMedia} />

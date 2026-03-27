@@ -5,6 +5,8 @@ import jwt from 'jsonwebtoken'
 import { JWT_SECRET } from '../../config.mjs'
 import uploadProfile from '../aws/uploadProfile.mjs'
 import { validateObjectId, normalizePagination } from '../utils/validate.mjs'
+import postModel from '../models/postModel.mjs'
+import crypto from 'crypto'
 
 const idEquals = (a, b) => String(a) === String(b)
 
@@ -55,11 +57,11 @@ const loginUser = async (req, res) => {
         }
         const user = await userModel.findOne({ email })
         if(!user) {
-            return res.status(400).send({ message: 'User not found' })
+            return res.status(400).send({ message: 'Invalid email or password' })
         }
         const isPasswordCorrect = await bcrypt.compare(password, user.password)
         if(!isPasswordCorrect) {
-            return res.status(400).send({ message: 'Invalid password' })
+            return res.status(400).send({ message: 'Invalid email or password' })
         }
         const token = jwt.sign({ id: user._id }, JWT_SECRET)
         res.setHeader('authorization', `Bearer ${token}`)
@@ -74,13 +76,78 @@ const loginUser = async (req, res) => {
     }
 };
 
+/**
+ * POST /password/forgot
+ * body: { email }
+ *
+ * For local/dev usage this returns a resetToken so the UI can complete the flow.
+ * In production, this should email a reset link instead.
+ */
+const forgotPassword = async (req, res) => {
+    try {
+        const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : ''
+        if (!email) return res.status(400).send({ message: 'Email is required' })
+
+        const user = await userModel.findOne({ email, isDeleted: { $ne: true } })
+
+        // Always return a generic message to avoid account enumeration.
+        const generic = { message: 'If an account exists for this email, reset instructions will be available.' }
+        if (!user) return res.status(200).send(generic)
+
+        const resetToken = crypto.randomBytes(24).toString('hex')
+        const resetPasswordTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex')
+        const resetPasswordExpiresAt = new Date(Date.now() + 1000 * 60 * 15) // 15 minutes
+
+        await userModel.updateOne(
+            { _id: user._id },
+            { $set: { resetPasswordTokenHash, resetPasswordExpiresAt } }
+        )
+
+        return res.status(200).send({ ...generic, resetToken })
+    } catch (error) {
+        return res.status(500).send({ message: 'Internal server error' })
+    }
+}
+
+/**
+ * POST /password/reset
+ * body: { token, newPassword }
+ */
+const resetPassword = async (req, res) => {
+    try {
+        const token = typeof req.body?.token === 'string' ? req.body.token.trim() : ''
+        const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : ''
+        if (!token) return res.status(400).send({ message: 'Reset token is required' })
+        if (!newPassword || newPassword.length < 8) return res.status(400).send({ message: 'Password must be at least 8 characters' })
+
+        const hash = crypto.createHash('sha256').update(token).digest('hex')
+        const user = await userModel.findOne({
+            resetPasswordTokenHash: hash,
+            resetPasswordExpiresAt: { $gt: new Date() },
+            isDeleted: { $ne: true },
+        })
+        if (!user) {
+            return res.status(400).send({ message: 'Reset link is invalid or expired. Please request a new one.' })
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10)
+        user.resetPasswordTokenHash = null
+        user.resetPasswordExpiresAt = null
+        await user.save()
+
+        return res.status(200).send({ message: 'Password updated successfully. Please login.' })
+    } catch (error) {
+        return res.status(500).send({ message: 'Internal server error' })
+    }
+}
+
 const getProfile = async (req, res) => {
     try {
         const userId = req.user.id
         const doc = await userModel
             .findById(userId)
             .select(
-                'username email phoneNumber profilePicture bio address education dob gender maritalStatus occupation isDeleted isActive isVerified isPremium isAdmin isSuperAdmin followers following'
+                'username email phoneNumber profilePicture coverImage bio address education dob gender maritalStatus occupation isDeleted isActive isVerified isPremium isAdmin isSuperAdmin followers following'
             )
             .lean()
         if (!doc) {
@@ -116,10 +183,17 @@ const updateProfile = async (req, res) => {
             occupation,
         } = req.body
 
-        // `profilePicture` is sent as a multipart upload; multer puts it on `req.file`.
+        // Parse `profilePicture` and `coverImage` if sent via multipart/form-data.
         let profilePictureUrl = null
+        let coverImageUrl = null
+        
         if (req.file) {
-            profilePictureUrl = await uploadProfile(req.file)
+            if (req.file.fieldname === 'profilePicture') profilePictureUrl = await uploadProfile(req.file)
+            else if (req.file.fieldname === 'coverImage') coverImageUrl = await uploadProfile(req.file)
+        }
+        if (req.files) {
+            if (req.files.profilePicture?.[0]) profilePictureUrl = await uploadProfile(req.files.profilePicture[0])
+            if (req.files.coverImage?.[0]) coverImageUrl = await uploadProfile(req.files.coverImage[0])
         }
 
         // Normalize types so updates don't break the Mongoose schema types.
@@ -171,8 +245,16 @@ const updateProfile = async (req, res) => {
             occupation,
         }
 
-        if (profilePictureUrl) {
+        if (req.body.deleteProfilePicture === 'true') {
+            updatedData.profilePicture = null
+        } else if (profilePictureUrl) {
             updatedData.profilePicture = profilePictureUrl
+        }
+
+        if (req.body.deleteCoverImage === 'true') {
+            updatedData.coverImage = null
+        } else if (coverImageUrl) {
+            updatedData.coverImage = coverImageUrl
         }
 
         const updatedUser = await userModel
@@ -277,7 +359,7 @@ const getPublicUser = async (req, res) => {
         }
         const target = await userModel
             .findOne({ _id: userId, isDeleted: { $ne: true } })
-            .select('username profilePicture bio occupation followers following')
+            .select('username profilePicture coverImage bio occupation followers following')
             .lean()
         if (!target) {
             return res.status(404).send({ message: 'User not found' })
@@ -295,6 +377,7 @@ const getPublicUser = async (req, res) => {
             _id: target._id,
             username: target.username,
             profilePicture: target.profilePicture,
+            coverImage: target.coverImage,
             bio: target.bio,
             occupation: target.occupation,
             followersCount: followers.length,
@@ -311,7 +394,7 @@ const orderedUsersByIds = async (ids) => {
     if (!ids.length) return []
     const users = await userModel
         .find({ _id: { $in: ids }, isDeleted: { $ne: true } })
-        .select('username profilePicture')
+        .select('username profilePicture occupation bio')
         .lean()
     const map = new Map(users.map((u) => [String(u._id), u]))
     return ids.map((id) => map.get(String(id))).filter(Boolean)
@@ -373,6 +456,129 @@ const getUserFollowing = async (req, res) => {
     }
 }
 
+/**
+ * GET /users
+ * Query: page, limit, q (optional search by username)
+ * Returns: users[] with isFollowing
+ */
+const listUsers = async (req, res) => {
+    try {
+        const meId = req.user?.id
+        if (!meId || !validateObjectId(meId)) {
+            return res.status(401).send({ message: 'Unauthorized' })
+        }
+        const { page, limit, skip } = normalizePagination(req.query)
+        const q = typeof req.query.q === 'string' ? req.query.q.trim() : ''
+
+        const me = await userModel.findById(meId).select('following').lean()
+        const followingSet = new Set((me?.following || []).map((id) => String(id)))
+
+        const filter = { isDeleted: { $ne: true } }
+        if (q) {
+            filter.username = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' }
+        }
+
+        const [users, total] = await Promise.all([
+            userModel
+                .find(filter)
+                .select('username profilePicture bio occupation')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            userModel.countDocuments(filter),
+        ])
+
+        const items = users
+            .filter((u) => String(u._id) !== String(meId))
+            .map((u) => ({
+                _id: u._id,
+                username: u.username,
+                profilePicture: u.profilePicture,
+                bio: u.bio,
+                occupation: u.occupation,
+                isFollowing: followingSet.has(String(u._id)),
+            }))
+
+        return res.status(200).send({ message: 'Users', page, limit, total, users: items })
+    } catch (error) {
+        return res.status(500).send({ message: 'Internal server error' })
+    }
+}
+
+/**
+ * GET /notifications
+ * Shows posts/jobs created by people the current user follows, since last seen.
+ */
+const getNotifications = async (req, res) => {
+    try {
+        const userId = req.user?.id
+        if (!userId || !validateObjectId(userId)) {
+            return res.status(401).send({ message: 'Unauthorized' })
+        }
+
+        const { limit } = normalizePagination(req.query)
+        const me = await userModel.findById(userId).select('following notificationsLastSeenAt').lean()
+        if (!me) return res.status(404).send({ message: 'User not found' })
+
+        const following = me.following || []
+        const since = me.notificationsLastSeenAt ? new Date(me.notificationsLastSeenAt) : null
+
+        const filter = {
+            status: 'active',
+            userId: { $in: following },
+        }
+        if (since) {
+            filter.createdAt = { $gt: since }
+        }
+
+        const items = await postModel
+            .find(filter)
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .populate('userId', 'username profilePicture')
+            .select('postType content job createdAt userId')
+            .lean()
+
+        const counts = items.reduce(
+            (acc, p) => {
+                if (p.postType === 'job') acc.jobs += 1
+                else acc.posts += 1
+                acc.all += 1
+                return acc
+            },
+            { all: 0, posts: 0, jobs: 0 }
+        )
+
+        return res.status(200).send({
+            message: 'Notifications',
+            since: since ? since.toISOString() : null,
+            counts,
+            items,
+        })
+    } catch (error) {
+        return res.status(500).send({ message: 'Internal server error' })
+    }
+}
+
+/**
+ * POST /notifications/seen
+ * Marks notifications as seen (sets notificationsLastSeenAt = now).
+ */
+const markNotificationsSeen = async (req, res) => {
+    try {
+        const userId = req.user?.id
+        if (!userId || !validateObjectId(userId)) {
+            return res.status(401).send({ message: 'Unauthorized' })
+        }
+        const now = new Date()
+        await userModel.updateOne({ _id: userId }, { $set: { notificationsLastSeenAt: now } })
+        return res.status(200).send({ message: 'OK', seenAt: now.toISOString() })
+    } catch (error) {
+        return res.status(500).send({ message: 'Internal server error' })
+    }
+}
+
 export {
     createUser,
     loginUser,
@@ -380,6 +586,11 @@ export {
     updateProfile,
     followUser,
     unfollowUser,
+    listUsers,
+    getNotifications,
+    markNotificationsSeen,
+    forgotPassword,
+    resetPassword,
     getPublicUser,
     getUserFollowers,
     getUserFollowing,

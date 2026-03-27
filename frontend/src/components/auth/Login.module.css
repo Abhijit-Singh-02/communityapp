@@ -118,6 +118,56 @@
     text-decoration: underline;
 }
 
+.inlineError {
+    border-radius: 14px;
+    padding: 12px 12px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 13px;
+}
+
+.inlineErrorTitle {
+    font-weight: 900;
+    margin-bottom: 6px;
+}
+
+.inlineErrorText {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.inlineNext {
+    margin-top: 10px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.inlineNextTitle {
+    font-weight: 900;
+    margin-bottom: 6px;
+}
+
+.inlineNext ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.forgotRow {
+    margin: 10px 0 0;
+    font-size: 13px;
+    text-align: center;
+}
+
+.forgotRow a {
+    color: rgba(99, 102, 241, 0.95);
+    text-decoration: none;
+    font-weight: 800;
+}
+
+.forgotRow a:hover {
+    text-decoration: underline;
+}
+
 @media (max-width: 480px) {
     .loginPage {
         grid-template-columns: 1fr;
