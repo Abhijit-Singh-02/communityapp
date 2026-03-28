@@ -1,0 +1,14 @@
+# Netlify: build the Vite app and publish compiled assets (not /src).
+# In the Netlify UI, set "Base directory" to the repo root, or leave empty if
+# this file lives at the site root — adjust [build] if you use a subfolder only in UI.
+
+[build]
+  base = "frontend"
+  command = "npm ci && npm run build"
+  publish = "dist"
+
+# SPA fallback: only applies when no static file matches (assets under /assets/ are served as files).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
