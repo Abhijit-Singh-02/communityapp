@@ -38,6 +38,9 @@ import multer from 'multer'
 
 // Store uploads in memory so we can upload to S3 using `file.buffer`.
 const upload = multer({ storage: multer.memoryStorage() })
+router.get('/', (req, res) => {
+    res.send('Hello World')
+})
 router.post('/signup', createUser)
 router.post('/login', loginUser)
 router.post('/password/forgot', forgotPassword)
